@@ -1,4 +1,4 @@
-package client.json.configs.hostconfig;
+package client.json.configs.hostconfig.restartpolicy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
