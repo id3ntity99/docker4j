@@ -44,7 +44,7 @@ public class Config {
     @JsonProperty("Image")
     private String image = "";
     @JsonProperty("Volumes")
-    private Map<String, String> volumes;
+    private Map<String, Object> volumes;
     @JsonProperty("WorkingDir")
     private String workingDir = "";
     @JsonProperty("Entrypoint")
@@ -60,7 +60,7 @@ public class Config {
     @JsonProperty("StopSignal")
     private String stopSignal;
     @JsonProperty("StopTimeout")
-    private int stopTimeout;
+    private int stopTimeout = 10;
     @JsonProperty("Shell")
     private String[] shell;
     @JsonProperty("HostConfig")
@@ -180,7 +180,7 @@ public class Config {
     /**
      * Sets a <code>Map</code> to specify the exposed ports.
      *
-     * @param exposedPorts Key must satisfy the form "[port]/[tcp|udp|sctp]" (e.g. "22/tcp"). Value must be an empty object.
+     * @param exposedPorts Key must satisfy the form "[port]/[tcp|udp|sctp]" (e.g. "22/tcp").
      *                     If an empty-object value(which is JSON equivalent of {}, empty curly brackets) is needed, use {@link EmptyObject}.
      * @return <code>Config</code> object with initialized <code>exposedPorts</code> field.
      */
@@ -230,6 +230,7 @@ public class Config {
 
     /**
      * Close stdin after the attached client disconnects.
+     *
      * @param stdinOnce Set this parameter to <strong>true</strong> if you want to close stdin when user disconnects. Default: <strong> false</strong>.
      * @return <code>Config</code> object with initialized <code>openStdin</code> field.
      */
@@ -245,6 +246,7 @@ public class Config {
     /**
      * Set a list of environment variables.
      * For example, ["PATH=...", "FOO=BAR"]
+     *
      * @param env a list of environment variables to set inside the container.
      * @return <code>Config</code> object with initialized <code>env</code> field.
      */
@@ -259,6 +261,7 @@ public class Config {
 
     /**
      * Set commands to run.
+     *
      * @param cmd String array of commands to run.
      * @return <code>Config</code> object with initialized <code>cmd</code> field.
      */
@@ -273,6 +276,7 @@ public class Config {
 
     /**
      * A test to perform to check if the container is healthy.
+     *
      * @param healthConfig A {@link HealthConfig} object. You need to instantiate and configure {@link HealthConfig} class first.
      * @return <code>Config</code> object with initialized <code>healthConfig</code> field.
      */
@@ -287,6 +291,7 @@ public class Config {
 
     /**
      * Windows-only configuration but non-Windows may set this field, but it will have any effects.
+     *
      * @param argsEscaped Command is already escaped.
      * @return <code>Config</code> object with initialized <code>argsEscaped</code> field.
      */
@@ -298,6 +303,7 @@ public class Config {
 
     /**
      * Get image name that was used when the container was created.
+     *
      * @return Image name string.
      */
     public String getImage() {
@@ -306,7 +312,8 @@ public class Config {
 
     /**
      * Set name of the image to use when creating a container.
-     * @param image A name of image to use when creating a container.
+     *
+     * @param image A name of image to use when creating  a container.
      * @return <code>Config</code> object with initialized <code>image</code> field.
      */
     public Config setImage(String image) {
@@ -314,11 +321,19 @@ public class Config {
         return this;
     }
 
-    public Map<String, String> getVolumes() {
+    public Map<String, Object> getVolumes() {
         return volumes;
     }
 
-    public Config setVolumes(Map<String, String> volumes) {
+    /**
+     * Set mount point paths inside the container. Use {@link EmptyObject} for hashmap value
+     * to map to JSON empty curly brackets({}).
+     *
+     * @param volumes A hashmap which takes mount point paths inside the container as a String key
+     *                and an empty object as a value.
+     * @return <code>Config</code> object with initialized <code>volumes</code> field.
+     */
+    public Config setVolumes(Map<String, Object> volumes) {
         this.volumes = volumes;
         return this;
     }
@@ -327,6 +342,12 @@ public class Config {
         return workingDir;
     }
 
+    /**
+     * Set working directory inside the container.
+     *
+     * @param workingDir The working directory for commands to run in.
+     * @return <code>Config</code> object with initialized <code>workingDirr</code> field.
+     */
     public Config setWorkingDir(String workingDir) {
         this.workingDir = workingDir;
         return this;
@@ -336,6 +357,14 @@ public class Config {
         return entryPoint;
     }
 
+    /**
+     * Set entrypoint for container.
+     *
+     * @param entryPoint The entrypoint(s) for the container as a string or an array of strings.
+     *                   An entrypoint specifies the executable, which should run when a container is started from
+     *                   the Docker image.
+     * @return <code>Config</code> object with initialized <code>entrypoint</code> field.
+     */
     public Config setEntryPoint(String[] entryPoint) {
         this.entryPoint = entryPoint;
         return this;
@@ -345,6 +374,12 @@ public class Config {
         return networkDisabled;
     }
 
+    /**
+     * Disable networking for the container.
+     *
+     * @param networkDisabled
+     * @return <code>Config</code> object with initialized <code>networkDisabled</code> field.
+     */
     public Config setNetworkDisabled(boolean networkDisabled) {
         this.networkDisabled = networkDisabled;
         return this;
@@ -354,6 +389,12 @@ public class Config {
         return macAddress;
     }
 
+    /**
+     * Set MAC address of the container.
+     *
+     * @param macAddress
+     * @return <code>Config</code> object with initialized <code>macAddress</code> field.
+     */
     public Config setMacAddress(String macAddress) {
         this.macAddress = macAddress;
         return this;
@@ -363,6 +404,14 @@ public class Config {
         return onBuild;
     }
 
+    /**
+     * Set ONBUILD metadata that were defined in the image's Dockerfile.
+     * ONBUILD instruction adds to the image a <strong>trigger</strong> instruction to be executed at a later time.
+     *
+     * @param onBuild Array of Strings for ONBUILD instructions.
+     * @return <code>Config</code> object with initialized <code>onBuild</code> field.
+     * @see <a href="https://docs.docker.com/engine/reference/builder/#onbuild">ONBUILD</a>
+     */
     public Config setOnBuild(String[] onBuild) {
         this.onBuild = onBuild;
         return this;
@@ -372,6 +421,12 @@ public class Config {
         return labels;
     }
 
+    /**
+     * Set user-defined metadata.
+     *
+     * @param labels Map of user-defined metadata.
+     * @return <code>Config</code> object with initialized <code>labels</code> field.
+     */
     public Config setLabels(Map<String, String> labels) {
         this.labels = labels;
         return this;
@@ -381,6 +436,12 @@ public class Config {
         return stopSignal;
     }
 
+    /**
+     * Set a signal to stop a container.
+     *
+     * @param stopSignal Stop signal as a String.
+     * @return <code>Config</code> object with initialized <code>stopSignal</code> field.
+     */
     public Config setStopSignal(String stopSignal) {
         this.stopSignal = stopSignal;
         return this;
@@ -390,6 +451,14 @@ public class Config {
         return stopTimeout;
     }
 
+    /**
+     * Set timeout to stop a container in <strong>seconds</strong>.
+     * If the stop timeout set to 20, it takes 20 seconds for the container to stop.
+     * Default: 10.
+     *
+     * @param stopTimeout Timeout to stop a cotainer in seconds.
+     * @return <code>Config</code> object with initialized <code>stopTimeout</code> field.
+     */
     public Config setStopTimeout(int stopTimeout) {
         this.stopTimeout = stopTimeout;
         return this;
@@ -399,6 +468,12 @@ public class Config {
         return shell;
     }
 
+    /**
+     * Set the shell commands used when RUN, CMD, and ENTRYPOINT as an array of string.
+     *
+     * @param shell The shell commands that was used as an array of string.
+     * @return <code>Config</code> object with initialized <code>shell</code> field.
+     */
     public Config setShell(String[] shell) {
         this.shell = shell;
         return this;
@@ -408,6 +483,17 @@ public class Config {
         return hostConfig;
     }
 
+
+    /**
+     * Set {@link HostConfig}. Use {@link HostConfig} to create {@link HostConfig} object, and to configure it.
+     * Then pass the instance to the parameter of this method.
+     * Note that, however, you can create and configure the {@link HostConfig} and pass it to the parameter,
+     * instantiation of {@link Config} will instantiate {@link HostConfig} and init the corresponding field.
+     * with that base configuration.
+     *
+     * @param hostConfig Container configuration that depends on the host we are running on.
+     * @return <code>Config</code> object with initialized <code>hostConfig</code> field.
+     */
     public Config setHostConfig(HostConfig hostConfig) {
         this.hostConfig = hostConfig;
         return this;
@@ -417,6 +503,18 @@ public class Config {
         return networkingConfig;
     }
 
+    /**
+     * Set {@link NetworkingConfig}, which is used for the networking configs specified in
+     * the <strong>docker create</strong> and <strong>docker network create</strong>.
+     * Use {@link NetworkingConfig} to create {@link NetworkingConfig} object, and to configure it.
+     * Then pass the instance to the parameter of this method.
+     * Note that, however, even though you can create {@link NetworkingConfig} object, configure it,
+     * and pass it to this method's parameter, instantiation of {@link Config} will instantiate
+     * {@link NetworkingConfig} and init corresponding field with that base configuration.
+     *
+     * @param networkingConfig Represents the container's networking configuration.
+     * @return <code>Config</code> object with initialized <code>networkingConfig</code> field.
+     */
     public Config setNetworkingConfig(NetworkingConfig networkingConfig) {
         this.networkingConfig = networkingConfig;
         return this;
