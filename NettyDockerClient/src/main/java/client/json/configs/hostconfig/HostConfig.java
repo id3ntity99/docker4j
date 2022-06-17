@@ -9,9 +9,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ *
  * Used for creation of container and container inspection.
  * This object will be converted to json object and sent to docker daemon.
  * Check /var/lib/docker/{container_id}/hostconfig.json
+ * @see <a href="https://docs.docker.com/engine/api/v1.41/#operation/ContainerCreate">HostConfig</a>
  */
 public class HostConfig {
     @JsonProperty("CpuShares")
