@@ -1,19 +1,18 @@
 package client;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.DefaultMaxBytesRecvByteBufAllocator;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.util.concurrent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.concurrent.ExecutionException;
 
 public class HttpClient {
     private ChannelFuture channelFuture;
@@ -30,8 +29,9 @@ public class HttpClient {
                     @Override
                     public void initChannel(SocketChannel ch) {
                         ch.config().setRecvByteBufAllocator(new DefaultMaxBytesRecvByteBufAllocator(80900, 80900));
+                        ch.config().setAutoClose(true);
                         ch.pipeline().addLast(new HttpClientCodec());
-                        ch.pipeline().addLast(new HttpClientResponseHandler());
+                        ch.pipeline().addLast(new HttpResponseHandler());
                     }
                 });
         channelFuture = bootstrap.connect().sync();
@@ -41,25 +41,33 @@ public class HttpClient {
         }
     }
 
-    public void request(FullHttpRequest req) {
-        //TODO
-        //  Request Builder 만들기
-        String uri = req.uri();
-        ChannelFuture writeFuture = channelFuture.channel().writeAndFlush(req);
-        try {
-            writeFuture.sync();
-        } catch (InterruptedException e) {
-            logger.debug("Thread stops while requesting", e);
-            close();
-        }
-        if (writeFuture.isSuccess() && writeFuture.isDone()) {
-            String loggerInfo = String.format("A request to %s is successfully done", uri);
-            logger.info(loggerInfo);
-        }
+    private Promise<String> createPromise() {
+        EventExecutor executor = channelFuture.channel()
+                .pipeline()
+                .context(HttpResponseHandler.class)
+                .executor();
+        // Create new promise for later use.
+        Promise<String> promise = new DefaultPromise<>(executor);
+
+        return promise;
     }
 
-    private void close() {
-        channelFuture.channel().close();
-        group.shutdownGracefully();
+    public String request(FullHttpRequest req) throws InterruptedException, ExecutionException{
+        String uri = req.uri();
+        Promise<String> promise = createPromise();
+        // Set promise to the handler.
+        channelFuture.channel().pipeline().get(HttpResponseHandler.class).setPromise(promise);
+        // Send request.
+        try {
+            channelFuture.channel()
+                    .writeAndFlush(req)
+                    .sync()
+                    .addListener(new RequestFutureListener(uri));
+        } catch (InterruptedException e) {
+            logger.error("Exception Raised", e);
+            Thread.currentThread().interrupt();
+        }
+        // Get response from the pre-created promise.
+        return promise.get();
     }
 }
