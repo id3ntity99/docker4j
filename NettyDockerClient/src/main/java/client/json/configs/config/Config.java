@@ -3,6 +3,7 @@ package client.json.configs.config;
 import client.json.configs.hostconfig.HostConfig;
 import client.json.configs.hostconfig.networkingconfig.NetworkingConfig;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 
 import java.util.Map;
 
@@ -26,7 +27,7 @@ public class Config {
     @JsonProperty("AttachStderr")
     private boolean attachStderr = true;
     @JsonProperty("ExposedPorts")
-    private Map<String, Object> exposedPorts;
+    private ExposedPorts exposedPorts;
     @JsonProperty("Tty")
     private boolean tty = false;
     @JsonProperty("OpenStdin")
@@ -36,7 +37,7 @@ public class Config {
     @JsonProperty("Env")
     private String[] env;
     @JsonProperty("Cmd")
-    private String[] cmd = {};
+    private String[] cmd = {"/bin/bash"};
     @JsonProperty("Healthcheck")
     private HealthConfig healthConfig;
     @JsonProperty("ArgsEscaped")
@@ -44,7 +45,7 @@ public class Config {
     @JsonProperty("Image")
     private String image = "";
     @JsonProperty("Volumes")
-    private Map<String, Object> volumes;
+    private Volumes volumes;
     @JsonProperty("WorkingDir")
     private String workingDir = "";
     @JsonProperty("Entrypoint")
@@ -173,18 +174,17 @@ public class Config {
         return this;
     }
 
-    public Map<String, Object> getExposedPorts() {
+    public ExposedPorts getExposedPorts() {
         return exposedPorts;
     }
 
     /**
-     * Sets a <code>Map</code> to specify the exposed ports.
+     * Sets a {@link ExposedPorts} to specify the exposed ports.
      *
-     * @param exposedPorts Key must satisfy the form "[port]/[tcp|udp|sctp]" (e.g. "22/tcp").
-     *                     If an empty-object value(which is JSON equivalent of {}, empty curly brackets) is needed, use {@link EmptyObject}.
+     * @param exposedPorts An instance of {@link ExposedPorts}.
      * @return <code>Config</code> object with initialized <code>exposedPorts</code> field.
      */
-    public Config setExposedPorts(Map<String, Object> exposedPorts) {
+    public Config setExposedPorts(ExposedPorts exposedPorts) {
         this.exposedPorts = exposedPorts;
         return this;
     }
@@ -321,19 +321,17 @@ public class Config {
         return this;
     }
 
-    public Map<String, Object> getVolumes() {
+    public Volumes getVolumes() {
         return volumes;
     }
 
     /**
-     * Set mount point paths inside the container. Use {@link EmptyObject} for hashmap value
-     * to map to JSON empty curly brackets({}).
+     * Set mount-point paths inside the container.
      *
-     * @param volumes A hashmap which takes mount point paths inside the container as a String key
-     *                and an empty object as a value.
+     * @param volumes An instance of {@link Volumes}.
      * @return <code>Config</code> object with initialized <code>volumes</code> field.
      */
-    public Config setVolumes(Map<String, Object> volumes) {
+    public Config setVolumes(Volumes volumes) {
         this.volumes = volumes;
         return this;
     }
