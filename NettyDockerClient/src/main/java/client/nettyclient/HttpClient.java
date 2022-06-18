@@ -1,4 +1,4 @@
-package client.nettyClient;
+package client.nettyclient;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -19,7 +19,7 @@ public class HttpClient {
     private ChannelFuture channelFuture;
     private final Logger logger = LoggerFactory.getLogger(HttpClient.class);
 
-    public void connect(URI uri) throws InterruptedException {
+    private void connect(URI uri) throws InterruptedException {
         EventLoopGroup group = new NioEventLoopGroup();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.channel(NioSocketChannel.class)
@@ -33,7 +33,7 @@ public class HttpClient {
         }
     }
 
-    private Promise<String> createPromise() {
+    private Promise<SimpleResponse> createPromise() {
         EventExecutor executor = channelFuture.channel()
                 .pipeline()
                 .context(HttpResponseHandler.class)
@@ -42,9 +42,9 @@ public class HttpClient {
         return new DefaultPromise<>(executor);
     }
 
-    public String request(FullHttpRequest req) throws InterruptedException, ExecutionException {
-        String uri = req.uri();
-        Promise<String> promise = createPromise();
+    public SimpleResponse request(URI targetURL, FullHttpRequest req) throws InterruptedException, ExecutionException {
+        connect(targetURL);
+        Promise<SimpleResponse> promise = createPromise();
         // Set promise to the handler.
         channelFuture.channel().pipeline().get(HttpResponseHandler.class).setPromise(promise);
         // Send request.
@@ -52,7 +52,7 @@ public class HttpClient {
             channelFuture.channel()
                     .writeAndFlush(req)
                     .sync()
-                    .addListener(new RequestFutureListener(uri));
+                    .addListener(new RequestFutureListener(targetURL.toString()));
         } catch (InterruptedException e) {
             logger.error("Exception Raised", e);
             Thread.currentThread().interrupt();
