@@ -19,7 +19,18 @@ public class HttpClient {
     private ChannelFuture channelFuture;
     private final Logger logger = LoggerFactory.getLogger(HttpClient.class);
 
-    private void connect(URI uri) throws InterruptedException {
+    /**
+     * Establish the connection between client and server(= Docker daemon).
+     * {@link EventLoopGroup} contains one or more {@link io.netty.channel.EventLoop}, which is assigned to
+     * each channel when the channel has been connected.
+     * Each {@link io.netty.channel.EventLoop} contains {@link io.netty.channel.ChannelPipeline}, which contains one or more
+     * {@link io.netty.channel.ChannelHandler}.
+     * If there is any events to process in the channels, the EventLoops catch them and pass to the ChannelPipelines to process them as required.
+     *
+     * @param uri Target URI to connect.
+     * @throws InterruptedException will be thrown when the connection process has been interrupted before completion.
+     */
+    public void connect(URI uri) throws InterruptedException {
         EventLoopGroup group = new NioEventLoopGroup();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.channel(NioSocketChannel.class)
@@ -33,6 +44,12 @@ public class HttpClient {
         }
     }
 
+    /**
+     * Create {@link Promise<SimpleResponse>} for later use.
+     * The promise is used to get and return the response.
+     *
+     * @return {@link Promise<SimpleResponse>}.
+     */
     private Promise<SimpleResponse> createPromise() {
         EventExecutor executor = channelFuture.channel()
                 .pipeline()
@@ -42,22 +59,24 @@ public class HttpClient {
         return new DefaultPromise<>(executor);
     }
 
+    /**
+     * Initiate the HTTP request. If {@link io.netty.channel.ChannelInboundHandler} receives the response, it will write
+     * the response to the {@link Promise}.
+     *
+     * @param targetURL A URI to send request.
+     * @param req       A {@link FullHttpRequest} to be sent.
+     * @return A {@link SimpleResponse} extracted from the {@link Promise}.
+     * @throws InterruptedException occurs when sending request has been interrupted.
+     * @throws ExecutionException   occurs when {@link Promise#get()}.
+     */
     public SimpleResponse request(URI targetURL, FullHttpRequest req) throws InterruptedException, ExecutionException {
-        connect(targetURL);
         Promise<SimpleResponse> promise = createPromise();
         // Set promise to the handler.
         channelFuture.channel().pipeline().get(HttpResponseHandler.class).setPromise(promise);
         // Send request.
-        try {
-            channelFuture.channel()
-                    .writeAndFlush(req)
-                    .sync()
-                    .addListener(new RequestFutureListener(targetURL.toString()));
-        } catch (InterruptedException e) {
-            logger.error("Exception Raised", e);
-            Thread.currentThread().interrupt();
-        }
-        // Get response from the pre-created promise.
+        channelFuture.channel()
+                .writeAndFlush(req)
+                .addListener(new RequestFutureListener(targetURL.toString()));
         return promise.get();
     }
 }
