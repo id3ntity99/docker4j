@@ -1,7 +1,7 @@
 package client.docker.commands;
 
 import client.docker.commands.exceptions.ContainerCreationException;
-import client.docker.commands.uris.URIs;
+import client.docker.uris.URIs;
 import client.json.configs.config.Config;
 import client.json.configs.config.ExposedPorts;
 import client.json.configs.config.HealthConfig;
