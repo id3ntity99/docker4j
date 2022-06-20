@@ -1,10 +1,13 @@
-package client.nettyclient;
+package client.nettyclient.response;
 
+import client.nettyclient.HttpClient;
 import io.netty.handler.codec.http.FullHttpRequest;
+
+import java.net.URI;
 
 /**
  * A simple response class that aggregates HTTP status code and response body.
- * This class is used to return HTTP response to the caller of {@link HttpClient#request(FullHttpRequest)}
+ * This class is used to return HTTP response to the caller of {@link HttpClient#request(URI, FullHttpRequest)}
  */
 public class SimpleResponse {
     private int statusCode;
