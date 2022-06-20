@@ -1,5 +1,7 @@
 package client.docker.commands;
 
+import client.docker.commands.exceptions.ContainerCreationException;
+import client.docker.commands.uris.URIs;
 import client.json.configs.config.Config;
 import client.json.configs.config.ExposedPorts;
 import client.json.configs.config.HealthConfig;
@@ -7,11 +9,10 @@ import client.json.configs.config.Volumes;
 import client.json.configs.hostconfig.HostConfig;
 import client.json.configs.hostconfig.networkingconfig.NetworkingConfig;
 import client.nettyclient.HttpClient;
-import client.nettyclient.SimpleResponse;
+import client.nettyclient.response.SimpleResponse;
 import client.request.POSTRequest;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -25,7 +26,7 @@ import java.util.Map;
  * All the user has to do is just using the methods of this class to configure the {@link Config},
  * and invoke {@link CreateContainerCmd#exec()} to make a request.
  */
-public class CreateContainerCmd {
+public class CreateContainerCmd extends AbstractCommand<CreateContainerResponse>{
     private final HttpClient httpClient = new HttpClient();
     private final Config config = new Config();
     private final ObjectMapper mapper = new ObjectMapper().setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
@@ -167,20 +168,22 @@ public class CreateContainerCmd {
         return this;
     }
 
-    private FullHttpRequest createRequest() throws JsonProcessingException {
+    public CreateContainerResponse exec() throws Exception {
         String jsonString = writer.writeValueAsString(config);
-        return new POSTRequest().withKeepAlive(false)
-                .withURI(targetUri)
+        FullHttpRequest req = new POSTRequest().withURI(targetUri)
                 .withBody(jsonString)
                 .build();
-    }
-
-    public CreateContainerResponse exec() throws Exception {
-        FullHttpRequest req = createRequest();
-        SimpleResponse simpleRes = httpClient.request(targetUri, req);
+        SimpleResponse simpleRes = httpClient.request(URIs.CREATE_CONTAINER.uri(), req);
         if (simpleRes.getStatusCode() != 201) {
-            throw new RuntimeException("Cannot create container due to: " + simpleRes.getBody());
+            String errMsg = String.format(
+                    "[%s] Cannot create container due to: %s",
+                    simpleRes.getStatusCode(),
+                    simpleRes.getBody()
+            );
+            throw new ContainerCreationException(errMsg);
         }
+        String info = String.format("Container created: %s", simpleRes.getBody());
+        logger.info(info);
         return mapper.readValue(simpleRes.getBody(), CreateContainerResponse.class);
     }
 }
