@@ -1,4 +1,4 @@
-package client.nettyClient;
+package client.nettyclient;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -18,6 +18,9 @@ public class RequestFutureListener implements ChannelFutureListener {
         if (future.isSuccess() && future.isDone()) {
             String loggerInfo = String.format("A request to %s is successfully done", uri);
             logger.info(loggerInfo);
+        } else {
+            logger.debug("Exception raised while writing...", future.cause());
+            future.cause().printStackTrace();
         }
     }
 }

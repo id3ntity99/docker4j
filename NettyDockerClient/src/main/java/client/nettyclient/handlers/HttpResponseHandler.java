@@ -1,11 +1,7 @@
 package client.nettyclient;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.util.CharsetUtil;
@@ -29,8 +25,11 @@ public class HttpResponseHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) {
         promise.setSuccess(simpleResponse);
-        ctx.channel().close();
         ctx.channel().eventLoop().shutdownGracefully();
     }
 
