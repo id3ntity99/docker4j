@@ -1,5 +1,6 @@
-package client.nettyclient;
+package client.nettyclient.handlers;
 
+import client.nettyclient.response.SimpleResponse;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.HttpContent;
@@ -21,10 +22,6 @@ public class HttpResponseHandler extends ChannelInboundHandlerAdapter {
             String stringBody = httpContent.content().toString(CharsetUtil.UTF_8);
             simpleResponse.setBody(stringBody);
         }
-    }
-
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) {
     }
 
     @Override
