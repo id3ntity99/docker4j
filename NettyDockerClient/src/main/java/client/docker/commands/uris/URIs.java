@@ -1,4 +1,4 @@
-package client.docker.commands;
+package client.docker.commands.uris;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
