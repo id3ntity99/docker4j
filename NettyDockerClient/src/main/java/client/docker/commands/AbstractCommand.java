@@ -16,6 +16,7 @@ public abstract class AbstractCommand<T> {
     /**
      * Create {@link io.netty.handler.codec.http.FullHttpRequest} and send it via {@link client.nettyclient.HttpClient}.
      * This method returns corresponding command response such as {@link CreateContainerResponse}.
+     *
      * @return A response corresponds to the command. Users should be able to map the response to the JSON string.
      * @throws Exception Throws an exception if the errorneous response has been received such as 400 BAD REQUEST.
      */
