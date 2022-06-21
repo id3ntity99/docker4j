@@ -37,7 +37,7 @@ public class Config {
     @JsonProperty("Env")
     private String[] env;
     @JsonProperty("Cmd")
-    private String[] cmd = {"/bin/bash"};
+    private String[] cmd = {};
     @JsonProperty("Healthcheck")
     private HealthConfig healthConfig;
     @JsonProperty("ArgsEscaped")
