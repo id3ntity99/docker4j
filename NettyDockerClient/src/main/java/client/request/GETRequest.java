@@ -5,6 +5,7 @@ import io.netty.util.AsciiString;
 
 import java.net.URI;
 
+@Deprecated
 public class GETRequest {
     private boolean isKeepAlive = false;
     private URI uri;

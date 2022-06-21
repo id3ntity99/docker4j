@@ -8,6 +8,7 @@ import io.netty.util.CharsetUtil;
 
 import java.net.URI;
 
+@Deprecated
 public class POSTRequest {
     private boolean isKeepAlive = false;
     private URI uri;
@@ -52,10 +53,12 @@ public class POSTRequest {
         }
         req.headers().set(HttpHeaderNames.ACCEPT_ENCODING, acceptEncoding);
         req.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
-        req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
+        if (body != null) {
+            req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
+            req.content().writeBytes(body);
+            req.headers().set(HttpHeaderNames.CONTENT_LENGTH, body.readableBytes());
+        }
         req.headers().set(HttpHeaderNames.ACCEPT, "*/*");
-        req.content().writeBytes(body);
-        req.headers().set(HttpHeaderNames.CONTENT_LENGTH, body.readableBytes());
         return req;
     }
 }
