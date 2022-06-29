@@ -1,9 +1,8 @@
-package client.json.configs.config;
+package client.docker.configs.config;
 
-import client.json.configs.hostconfig.HostConfig;
-import client.json.configs.hostconfig.networkingconfig.NetworkingConfig;
+import client.docker.configs.hostconfig.HostConfig;
+import client.docker.configs.hostconfig.networkingconfig.NetworkingConfig;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 
 import java.util.Map;
 

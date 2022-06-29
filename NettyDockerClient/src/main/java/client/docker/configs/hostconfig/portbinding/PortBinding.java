@@ -1,4 +1,4 @@
-package client.json.configs.hostconfig.portbinding;
+package client.docker.configs.hostconfig.portbinding;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

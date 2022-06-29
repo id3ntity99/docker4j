@@ -1,4 +1,4 @@
-package client.json.configs.hostconfig.mount;
+package client.docker.configs.hostconfig.mount;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

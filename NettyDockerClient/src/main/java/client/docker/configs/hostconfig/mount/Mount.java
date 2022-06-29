@@ -1,10 +1,9 @@
-package client.json.configs.hostconfig.mount;
+package client.docker.configs.hostconfig.mount;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public class Mount {
     @JsonProperty("Target")

@@ -1,4 +1,4 @@
-package client.json.configs.hostconfig.networkingconfig.endpointsconfig;
+package client.docker.configs.hostconfig.networkingconfig.endpointsconfig;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

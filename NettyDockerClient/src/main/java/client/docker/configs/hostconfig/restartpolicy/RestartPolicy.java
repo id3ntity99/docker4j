@@ -1,4 +1,4 @@
-package client.json.configs.hostconfig.restartpolicy;
+package client.docker.configs.hostconfig.restartpolicy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

@@ -1,4 +1,4 @@
-package client.json.configs.config;
+package client.docker.configs.config;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 

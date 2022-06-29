@@ -1,8 +1,8 @@
-package client.json.configs.hostconfig;
+package client.docker.configs.hostconfig;
 
-import client.json.configs.hostconfig.mount.Mount;
-import client.json.configs.hostconfig.portbinding.PortBinding;
-import client.json.configs.hostconfig.restartpolicy.RestartPolicy;
+import client.docker.configs.hostconfig.mount.Mount;
+import client.docker.configs.hostconfig.portbinding.PortBinding;
+import client.docker.configs.hostconfig.restartpolicy.RestartPolicy;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
