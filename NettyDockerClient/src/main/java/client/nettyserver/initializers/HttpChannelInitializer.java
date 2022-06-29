@@ -1,6 +1,6 @@
-package client.nettyclient.initializers;
+package client.nettyserver.initializers;
 
-import client.nettyclient.handlers.HttpResponseHandler;
+import client.nettyserver.handlers.HttpResponseHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.DefaultMaxBytesRecvByteBufAllocator;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -14,7 +14,8 @@ public class HttpChannelInitializer extends ChannelInitializer<NioSocketChannel>
     /**
      * Init channel.
      * This method created {@link DefaultMaxBytesRecvByteBufAllocator} to allocate {@link io.netty.buffer.ByteBuf} for receiving message.
-     * @param ch            the {@link io.netty.channel.Channel} which was registered.
+     *
+     * @param ch the {@link io.netty.channel.Channel} which was registered.
      */
     @Override
     public void initChannel(NioSocketChannel ch) {

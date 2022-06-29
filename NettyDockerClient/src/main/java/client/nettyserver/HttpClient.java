@@ -1,9 +1,8 @@
-package client.nettyclient;
+package client.nettyserver;
 
-import client.nettyclient.handlers.HttpResponseHandler;
-import client.nettyclient.initializers.HttpChannelInitializer;
-import client.nettyclient.listeners.RequestFutureListener;
-import client.nettyclient.response.SimpleResponse;
+import client.nettyserver.handlers.HttpResponseHandler;
+import client.nettyserver.initializers.HttpChannelInitializer;
+import client.nettyserver.listeners.RequestFutureListener;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -18,6 +17,10 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * @deprecated Use {@link client.docker.dockerclient.DockerClient} instead.
+ */
+@Deprecated
 public class HttpClient {
     private final Logger logger = LoggerFactory.getLogger(HttpClient.class);
 
@@ -58,7 +61,7 @@ public class HttpClient {
      * Even if this method makes use of asynchronous request, it will block until the promise is marked as success with the result.
      *
      * @param uri A URI to send request.
-     * @param req       A {@link FullHttpRequest} to be sent.
+     * @param req A {@link FullHttpRequest} to be sent.
      * @return A {@link SimpleResponse} extracted from the {@link Promise}.
      * @throws InterruptedException occurs when sending request has been interrupted.
      * @throws ExecutionException   occurs when {@link Promise#get()}.
@@ -72,7 +75,4 @@ public class HttpClient {
         channel.writeAndFlush(req).addListener(new RequestFutureListener(uri));
         return promise.get();
     }
-
-    // TODO
-    //  public void attach();
 }
