@@ -1,5 +1,6 @@
 package client.docker.configs.exec;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ExecCreateConfig {
@@ -28,6 +29,7 @@ public class ExecCreateConfig {
         return isAttachStdin;
     }
 
+    @JsonIgnore
     public ExecCreateConfig setAttachStdin(boolean attachStdin) {
         isAttachStdin = attachStdin;
         return this;
@@ -37,6 +39,7 @@ public class ExecCreateConfig {
         return isAttachStdout;
     }
 
+    @JsonIgnore
     public ExecCreateConfig setAttachStdout(boolean attachStdout) {
         isAttachStdout = attachStdout;
         return this;
@@ -46,6 +49,7 @@ public class ExecCreateConfig {
         return isAttachStderr;
     }
 
+    @JsonIgnore
     public ExecCreateConfig setAttachStderr(boolean attachStderr) {
         isAttachStderr = attachStderr;
         return this;
@@ -87,6 +91,7 @@ public class ExecCreateConfig {
         return this;
     }
 
+    @JsonIgnore
     public boolean isPrivileged() {
         return isPrivileged;
     }
