@@ -1,4 +1,4 @@
-package client.docker.dockerclient;
+package client.docker.dockerclient.sync;
 
 import client.docker.commands.Command;
 import client.nettyserver.SimpleResponse;
