@@ -1,5 +1,6 @@
 package client.nettyserver;
 
+import client.docker.dockerclient.sync.DockerClient;
 import client.nettyserver.handlers.HttpResponseHandler;
 import client.nettyserver.initializers.HttpChannelInitializer;
 import client.nettyserver.listeners.RequestFutureListener;
@@ -18,7 +19,7 @@ import java.net.URI;
 import java.util.concurrent.ExecutionException;
 
 /**
- * @deprecated Use {@link client.docker.dockerclient.DockerClient} instead.
+ * @deprecated Use {@link DockerClient} instead.
  */
 @Deprecated
 public class HttpClient {

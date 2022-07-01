@@ -1,42 +1,26 @@
 package client.nettyserver.handlers;
 
-import client.docker.commands.CreateContainerCommand;
+import client.docker.commands.Command;
 import client.docker.commands.CreateContainerResponse;
 import client.docker.dockerclient.proxy.ProxyDockerClient;
 import client.nettyserver.SimpleResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.channel.SimpleUserEventChannelHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 
-public class CreateContainerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+public class CreateContainerHandler extends SimpleUserEventChannelHandler<Command> {
     private ProxyDockerClient proxyDockerClient;
     private CreateContainerResponse createContainerResponse;
 
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println(this.getClass() + " active");
-        Channel inboundChannel = ctx.channel();
-        proxyDockerClient = new ProxyDockerClient().withInboundChannel(inboundChannel)
-                .withOutChannelClass(ctx.channel().getClass())
-                .withAddress("localhost", 2375)
-                .withEventLoop(ctx.channel().eventLoop())
-                .bootstrap();
-        proxyDockerClient.connect();
+    public CreateContainerHandler(ProxyDockerClient proxyDockerClient) {
+        this.proxyDockerClient = proxyDockerClient;
     }
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) throws Exception {
-        CreateContainerCommand createContainerCommand = new CreateContainerCommand().withImage("alpine")
-                .withAttachStderr(true)
-                .withAttachStdin(true)
-                .withAttachStdout(true)
-                .withTty(false)
-                .withOpenStdin(true);
-        proxyDockerClient.asyncRequest(createContainerCommand)
+    public void eventReceived(ChannelHandlerContext ctx, Command cmd) throws Exception {
+        proxyDockerClient.asyncRequest(cmd)
                 .addListener(new FutureListener<SimpleResponse>() {
                     @Override
                     public void operationComplete(Future<SimpleResponse> future) throws Exception {

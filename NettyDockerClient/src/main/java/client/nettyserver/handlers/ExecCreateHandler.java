@@ -19,11 +19,12 @@ public class ExecCreateHandler extends SimpleUserEventChannelHandler<String> {
 
     @Override
     public void eventReceived(ChannelHandlerContext ctx, String containerId) {
-        ExecCreateCommand execCreateCommand = new ExecCreateCommand(containerId).withTty(false)
+        ExecCreateCommand execCreateCommand = new ExecCreateCommand(containerId).withTty(true)
                 .withAttachStderr(true)
                 .withAttachStdin(true)
                 .withAttachStdout(true)
-                .withCmd(new String[]{"apk", "list"});
+                .withUser("root")
+                .withCmd(new String[]{"/bin/sh"});
 
         proxyDockerClient.asyncRequest(execCreateCommand).addListener(new FutureListener<SimpleResponse>() {
             @Override
@@ -32,8 +33,8 @@ public class ExecCreateHandler extends SimpleUserEventChannelHandler<String> {
                     System.out.println("Exec created...");
                     SimpleResponse res = future.get();
                     ExecCreateResponse execRes = new ObjectMapper().readValue(res.getBody(), ExecCreateResponse.class);
-                    // ctx.pipeline().replace(ExecCreateHandler.class, "execStartHandler", new ExecStartHandler(proxyDockerClient));
-                    // ctx.fireUserEventTriggered(execRes);
+                    ctx.pipeline().replace(ExecCreateHandler.class, "execStartHandler", new ExecStartHandler(proxyDockerClient));
+                    ctx.fireUserEventTriggered(execRes);
                 }
             }
         });
