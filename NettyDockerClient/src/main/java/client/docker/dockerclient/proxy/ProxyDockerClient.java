@@ -2,10 +2,11 @@ package client.docker.dockerclient.proxy;
 
 import client.docker.commands.Command;
 import client.docker.commands.exceptions.CommandBuildException;
-import client.docker.dockerclient.DockerClient;
 import client.docker.dockerclient.proxy.decoder.DockerFrameDecoder;
 import client.docker.dockerclient.proxy.exceptions.ProxyRequestException;
 import client.docker.dockerclient.proxy.handlers.ProxyHandler;
+import client.docker.dockerclient.proxy.handlers.TCPUpgradeHandler;
+import client.docker.dockerclient.sync.DockerClient;
 import client.nettyserver.SimpleResponse;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
@@ -62,25 +63,14 @@ public class ProxyDockerClient extends DockerClient {
         return this;
     }
 
-    @Override
-    public void connect() {
-        ChannelFuture future = bootstrap.connect(dockerAddress)
-                .addListener(new ChannelFutureListener() {
-                    @Override
-                    public void operationComplete(ChannelFuture future) throws Exception {
-                        if (future.isSuccess()) {
-                            System.out.println("Connected to remote address");
-                            isConnected = true;
-                            // 비동기적으로 작동하기때문에 원격 연결이 완료되기 이전에 inboundChannel의
-                            // channelRead()가 작동하여 AsyncProxyDockerClient.asyncRequest(REQUEST)가
-                            // 호출 될 수 있어 수동으로 read() 요청을 보내는 것.
-                            inboundChannel.read();
-                        } else {
-                            throw new Exception("Cannot connect to the remote address");
-                        }
-                    }
-                });
+    public ChannelFuture asyncConnect() {
+        ChannelFuture future = bootstrap.connect(dockerAddress);
         this.outboundChannel = future.channel();
+        return future;
+    }
+
+    public Channel getOutboundChannel() {
+        return this.outboundChannel;
     }
 
     public Promise<SimpleResponse> asyncRequest(Command command) {
@@ -95,20 +85,11 @@ public class ProxyDockerClient extends DockerClient {
         }
     }
 
-    public void exec(Command execCommand) {
+    public ChannelFuture exec(Command execCommand) {
         FullHttpRequest req = execCommand.build();
         outboundChannel.pipeline().remove(ProxyHandler.class);
         outboundChannel.pipeline().addLast(new TCPUpgradeHandler());
-        outboundChannel.pipeline().addLast(new DockerFrameDecoder());
-        outboundChannel.writeAndFlush(req).addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
-                if (future.isSuccess()) {
-                    System.out.println("Exec start request has been sent successfully");
-                } else {
-                    future.cause().printStackTrace();
-                }
-            }
-        });
+        outboundChannel.pipeline().addLast(new DockerFrameDecoder(inboundChannel));
+        return outboundChannel.writeAndFlush(req);
     }
 }
