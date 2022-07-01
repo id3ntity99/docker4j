@@ -1,4 +1,4 @@
-package client.docker.dockerclient.proxy;
+package client.docker.dockerclient.proxy.handlers;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -14,6 +14,8 @@ public class TCPUpgradeHandler extends SimpleChannelInboundHandler<FullHttpRespo
             System.out.println("TCP Upgraded");
             ctx.pipeline().remove(HttpClientCodec.class);
             ctx.pipeline().remove(HttpObjectAggregator.class);
+            ctx.pipeline().remove(this);
+            ctx.fireChannelActive();
         } else {
             System.out.println("Something went wrong");
         }
