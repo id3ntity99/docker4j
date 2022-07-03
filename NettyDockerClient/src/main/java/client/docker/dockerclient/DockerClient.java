@@ -1,6 +1,6 @@
 package client.docker.dockerclient;
 
-import client.nettyserver.SimpleResponse;
+import client.docker.model.SimpleResponse;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.util.concurrent.Promise;
