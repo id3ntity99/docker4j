@@ -1,4 +1,4 @@
-package client.docker;
+package client.docker.model;
 
 import client.docker.configs.config.Config;
 

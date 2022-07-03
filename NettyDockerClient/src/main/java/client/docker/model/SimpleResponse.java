@@ -1,4 +1,4 @@
-package client.nettyserver;
+package client.docker.model;
 
 public class SimpleResponse {
     private int statusCode;
