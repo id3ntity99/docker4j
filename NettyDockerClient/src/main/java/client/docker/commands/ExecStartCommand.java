@@ -23,8 +23,9 @@ public class ExecStartCommand extends Command<ExecStartCommand, Void> {
         return this;
     }
 
-    public ExecStartCommand(String execId) {
+    public ExecStartCommand withExecId(String execId) {
         this.execId = execId;
+        return this;
     }
 
     public ExecStartCommand withDetach(boolean detach) {

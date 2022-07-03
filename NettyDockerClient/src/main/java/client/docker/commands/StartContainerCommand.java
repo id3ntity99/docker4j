@@ -9,7 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 public class StartContainerCommand extends Command<StartContainerCommand, Void> {
-    private final String containerId;
+    private String containerId;
     private NettyDockerClient nettyDockerClient;
 
     @Override
@@ -18,8 +18,13 @@ public class StartContainerCommand extends Command<StartContainerCommand, Void> 
         return this;
     }
 
-    public StartContainerCommand(String containerId) {
+    public StartContainerCommand() {
+
+    }
+
+    public StartContainerCommand withContainerId(String containerId) {
         this.containerId = containerId;
+        return this;
     }
 
     @Override

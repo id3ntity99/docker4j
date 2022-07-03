@@ -25,8 +25,9 @@ public class ExecCreateCommand extends Command<ExecCreateCommand, String> {
         return this;
     }
 
-    public ExecCreateCommand(String containerId) {
+    public ExecCreateCommand withContainerId(String containerId) {
         this.containerId = containerId;
+        return this;
     }
 
     public ExecCreateCommand withAttachStdin(boolean attachStdin) {
