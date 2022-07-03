@@ -1,11 +1,11 @@
 package client.docker.commands.exceptions;
 
-public class CommandBuildException extends RuntimeException{
-    public CommandBuildException(String message, Throwable t) {
+public class DockerRequestException extends RuntimeException{
+    public DockerRequestException(String message, Throwable t) {
         super(message, t);
     }
 
-    public CommandBuildException(String message) {
+    public DockerRequestException(String message) {
         super(message);
     }
 }
