@@ -6,6 +6,7 @@ import client.docker.dockerclient.NettyDockerClient;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleUserEventChannelHandler;
 
+@Deprecated
 public class CreateContainerHandler extends SimpleUserEventChannelHandler<Boolean> {
     private final NettyDockerClient nettyDockerClient;
 

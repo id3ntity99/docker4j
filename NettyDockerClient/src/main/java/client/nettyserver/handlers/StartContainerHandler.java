@@ -6,6 +6,7 @@ import client.docker.dockerclient.NettyDockerClient;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleUserEventChannelHandler;
 
+@Deprecated
 public class StartContainerHandler extends SimpleUserEventChannelHandler<Container> {
     private final NettyDockerClient nettyDockerClient;
 
@@ -15,7 +16,7 @@ public class StartContainerHandler extends SimpleUserEventChannelHandler<Contain
 
     @Override
     public void eventReceived(ChannelHandlerContext ctx, Container container) {
-        new StartContainerCommand(container.getContainerId())
+        new StartContainerCommand().withContainerId(container.getContainerId())
                 .withDockerClient(nettyDockerClient)
                 .exec();
         ctx.pipeline().replace(this, "execCreateHandler", new ExecCreateHandler(nettyDockerClient));
