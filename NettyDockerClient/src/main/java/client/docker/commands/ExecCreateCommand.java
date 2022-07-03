@@ -3,11 +3,13 @@ package client.docker.commands;
 import client.docker.commands.exceptions.DockerRequestException;
 import client.docker.configs.exec.ExecCreateConfig;
 import client.docker.dockerclient.NettyDockerClient;
-import client.nettyserver.SimpleResponse;
+import client.docker.util.RequestHelper;
+import client.docker.model.SimpleResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.util.CharsetUtil;
 
 import java.net.URI;
@@ -87,14 +89,7 @@ public class ExecCreateCommand extends Command<ExecCreateCommand, String> {
             URI uri = new URI(stringUri);
             String body = writer.writeValueAsString(config);
             ByteBuf bodyBuffer = Unpooled.copiedBuffer(body, CharsetUtil.UTF_8);
-            FullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, uri.getRawPath());
-            req.headers().set(HttpHeaderNames.HOST, uri.getHost());
-            req.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-            req.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
-            req.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
-            req.content().writeBytes(bodyBuffer);
-            req.headers().add(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
-            req.headers().set(HttpHeaderNames.CONTENT_LENGTH, bodyBuffer.readableBytes());
+            FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
             SimpleResponse res = nettyDockerClient.request(req).sync().get();
             return mapper.readTree(res.getBody()).get("Id").asText();
         } catch (RuntimeException | ExecutionException | JsonProcessingException | URISyntaxException e) {

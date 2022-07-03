@@ -3,10 +3,13 @@ package client.docker.commands;
 import client.docker.commands.exceptions.DockerRequestException;
 import client.docker.configs.exec.ExecStartConfig;
 import client.docker.dockerclient.NettyDockerClient;
+import client.docker.util.RequestHelper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.util.CharsetUtil;
 
 import java.net.URI;
@@ -45,15 +48,8 @@ public class ExecStartCommand extends Command<ExecStartCommand, Void> {
             URI uri = new URI(stringUri);
             String body = writer.writeValueAsString(config);
             ByteBuf bodyBuffer = Unpooled.copiedBuffer(body, CharsetUtil.UTF_8);
-            FullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, uri.getRawPath());
-            req.headers().set(HttpHeaderNames.HOST, uri.getHost());
+            FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
             req.headers().set(HttpHeaderNames.UPGRADE, "tcp"); //이 헤더를 추가하면 HTTP가 TCP로 업그레이드, FrameDecoder 활성화됨.
-            req.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE);//이 헤더를 추가하면 HTTP가 TCP로 업그레이드, FrameDecoder 활성화됨.
-            req.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
-            req.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
-            req.content().writeBytes(bodyBuffer);
-            req.headers().add(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
-            req.headers().set(HttpHeaderNames.CONTENT_LENGTH, bodyBuffer.readableBytes());
             nettyDockerClient.execute(req);
         } catch (JsonProcessingException | URISyntaxException e) {
             String errMsg = String.format("Exception raised while build command: %s", this.getClass().getSimpleName());

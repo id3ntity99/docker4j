@@ -1,6 +1,5 @@
 package client.docker.commands;
 
-import client.docker.Container;
 import client.docker.commands.exceptions.DockerRequestException;
 import client.docker.configs.config.Config;
 import client.docker.configs.config.ExposedPorts;
@@ -9,12 +8,15 @@ import client.docker.configs.config.Volumes;
 import client.docker.configs.hostconfig.HostConfig;
 import client.docker.configs.hostconfig.networkingconfig.NetworkingConfig;
 import client.docker.dockerclient.NettyDockerClient;
+import client.docker.model.Container;
+import client.docker.util.RequestHelper;
+import client.docker.model.SimpleResponse;
 import client.docker.uris.URIs;
-import client.nettyserver.SimpleResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.util.CharsetUtil;
 
 import java.net.URI;
@@ -173,33 +175,21 @@ public class CreateContainerCommand extends Command<CreateContainerCommand, Cont
         return this;
     }
 
-    private FullHttpRequest createRequest() throws JsonProcessingException, URISyntaxException{
-        String body = writer.writeValueAsString(config);
-        URI uri = new URI(URIs.CREATE_CONTAINER.uri());
-        FullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, uri.getRawPath());
-        ByteBuf bodyBuffer = Unpooled.copiedBuffer(body, CharsetUtil.UTF_8);
-        req.headers().set(HttpHeaderNames.HOST, uri.getHost());
-        req.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-        req.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
-        req.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
-        req.content().writeBytes(bodyBuffer);
-        req.headers().add(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
-        req.headers().set(HttpHeaderNames.CONTENT_LENGTH, bodyBuffer.readableBytes());
-        return req;
-    }
-
     @Override
     public Container exec() {
         try {
-            Container container = new Container().setConfig(config);
-            FullHttpRequest req = createRequest();
+            String body = writer.writeValueAsString(config);
+            URI uri = new URI(URIs.CREATE_CONTAINER.uri());
+            ByteBuf bodyBuffer = Unpooled.copiedBuffer(body, CharsetUtil.UTF_8);
+            FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
             SimpleResponse simpleRes = nettyDockerClient.request(req).sync().get();
             String containerId = mapper.readTree(simpleRes.getBody()).get("Id").asText();
-            container.setContainerId(containerId);
-            return container;
+            return new Container().setContainerId(containerId).setConfig(config);
+
         } catch (JsonProcessingException | URISyntaxException e) {
             String errMsg = String.format("Exception raised while build the %s command", this.getClass().getSimpleName());
             throw new DockerRequestException(errMsg, e);
+
         } catch (InterruptedException | ExecutionException e) {
             String errMsg = String.format("Exception raised while build the %s command", this.getClass().getSimpleName());
             Thread.currentThread().interrupt();
