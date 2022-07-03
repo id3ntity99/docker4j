@@ -3,12 +3,10 @@ package client.nettyserver.handlers;
 import client.docker.dockerclient.NettyDockerClient;
 import client.nettyserver.listeners.ListenAndReadListener;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.util.CharsetUtil;
 
 public class WebSocketFrameHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
     private final Channel outChannel;
@@ -25,7 +23,7 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<TextWebSo
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) throws Exception {
-        ByteBuf buf = Unpooled.copiedBuffer(msg.text(), CharsetUtil.UTF_8);
-        outChannel.writeAndFlush(buf).addListener(new ListenAndReadListener(ctx.channel()));
+        ByteBuf inboundBytes = ctx.channel().alloc().heapBuffer().writeBytes(msg.content());
+        outChannel.writeAndFlush(inboundBytes).addListener(new ListenAndReadListener(ctx.channel()));
     }
 }
