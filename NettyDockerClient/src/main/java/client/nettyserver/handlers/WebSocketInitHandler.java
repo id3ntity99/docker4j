@@ -1,6 +1,6 @@
 package client.nettyserver.handlers;
 
-import client.docker.Container;
+import client.docker.model.Container;
 import client.docker.commands.CreateContainerCommand;
 import client.docker.commands.ExecCreateCommand;
 import client.docker.commands.ExecStartCommand;
@@ -71,14 +71,12 @@ public class WebSocketInitHandler extends SimpleChannelInboundHandler<FullHttpRe
         boolean isUpgradeReq = req.headers().get(HttpHeaderNames.CONNECTION).equalsIgnoreCase("Upgrade");
         boolean isWsUpgradeReq = req.headers().get(HttpHeaderNames.UPGRADE).equalsIgnoreCase("WebSocket");
         if (isUpgradeReq && isWsUpgradeReq) {
-            //ctx.pipeline().addLast(new CreateContainerHandler(dockerClient));
-            //ctx.pipeline().fireUserEventTriggered(isUpgradeReq);
             Container container = createContainer();
             startContainer(container);
             String execId = execCreate(container);
             execStart(execId);
             logger.info("Upgrading the connection...");
-            handleHandshake(ctx, req).sync().addListener(new WsHandshakeListener(ctx, dockerClient));
+            handleHandshake(ctx, req).addListener(new WsHandshakeListener(ctx, dockerClient));
         } else {
             logger.debug("Invalid request (Expected HTTP upgrade request)");
             HttpResponse res = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
