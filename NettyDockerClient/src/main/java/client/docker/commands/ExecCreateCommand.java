@@ -1,7 +1,9 @@
 package client.docker.commands;
 
-import client.docker.commands.exceptions.CommandBuildException;
+import client.docker.commands.exceptions.DockerRequestException;
 import client.docker.configs.exec.ExecCreateConfig;
+import client.docker.dockerclient.proxy.NettyDockerClient;
+import client.nettyserver.SimpleResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -10,10 +12,18 @@ import io.netty.util.CharsetUtil;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.ExecutionException;
 
-public class ExecCreateCommand extends Command {
+public class ExecCreateCommand extends Command<ExecCreateCommand, String> {
     private final ExecCreateConfig config = new ExecCreateConfig();
-    private final String containerId;
+    private String containerId;
+    private NettyDockerClient nettyDockerClient;
+
+    @Override
+    public ExecCreateCommand withDockerClient(NettyDockerClient nettyDockerClient) {
+        this.nettyDockerClient = nettyDockerClient;
+        return this;
+    }
 
     public ExecCreateCommand(String containerId) {
         this.containerId = containerId;
@@ -70,7 +80,7 @@ public class ExecCreateCommand extends Command {
     }
 
     @Override
-    public FullHttpRequest build() throws CommandBuildException {
+    public String exec() throws DockerRequestException {
         try {
             String stringUri = String.format("http://localhost:2375/containers/%s/exec", containerId);
             URI uri = new URI(stringUri);
@@ -84,10 +94,15 @@ public class ExecCreateCommand extends Command {
             req.content().writeBytes(bodyBuffer);
             req.headers().add(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
             req.headers().set(HttpHeaderNames.CONTENT_LENGTH, bodyBuffer.readableBytes());
-            return req;
-        } catch (JsonProcessingException | URISyntaxException e) {
+            SimpleResponse res = nettyDockerClient.request(req).sync().get();
+            return mapper.readTree(res.getBody()).get("Id").asText();
+        } catch (RuntimeException | ExecutionException | JsonProcessingException | URISyntaxException e) {
             String errMsg = String.format("Exception raised while building command %s", this.getClass().getSimpleName());
-            throw new CommandBuildException(errMsg, e);
+            throw new client.docker.dockerclient.proxy.exceptions.DockerRequestException(errMsg, e);
+        } catch (InterruptedException e) {
+            String errMsg = String.format("Exception raised while building command %s", this.getClass().getSimpleName());
+            Thread.currentThread().interrupt();
+            throw new client.docker.dockerclient.proxy.exceptions.DockerRequestException(errMsg, e);
         }
     }
 }

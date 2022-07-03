@@ -1,7 +1,8 @@
 package client.docker.commands;
 
-import client.docker.commands.exceptions.CommandBuildException;
+import client.docker.commands.exceptions.DockerRequestException;
 import client.docker.configs.exec.ExecStartConfig;
+import client.docker.dockerclient.proxy.NettyDockerClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -11,9 +12,16 @@ import io.netty.util.CharsetUtil;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class ExecStartCommand extends Command {
+public class ExecStartCommand extends Command<ExecStartCommand, Void> {
     private final ExecStartConfig config = new ExecStartConfig();
-    private final String execId;
+    private String execId;
+    private NettyDockerClient nettyDockerClient;
+
+    @Override
+    public ExecStartCommand withDockerClient(NettyDockerClient nettyDockerClient) {
+        this.nettyDockerClient = nettyDockerClient;
+        return this;
+    }
 
     public ExecStartCommand(String execId) {
         this.execId = execId;
@@ -30,7 +38,7 @@ public class ExecStartCommand extends Command {
     }
 
     @Override
-    public FullHttpRequest build() throws CommandBuildException {
+    public Void exec() throws DockerRequestException {
         try {
             String stringUri = String.format("http://localhost:2375/exec/%s/start", execId);
             URI uri = new URI(stringUri);
@@ -45,10 +53,11 @@ public class ExecStartCommand extends Command {
             req.content().writeBytes(bodyBuffer);
             req.headers().add(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
             req.headers().set(HttpHeaderNames.CONTENT_LENGTH, bodyBuffer.readableBytes());
-            return req;
+            nettyDockerClient.execute(req);
         } catch (JsonProcessingException | URISyntaxException e) {
             String errMsg = String.format("Exception raised while build command: %s", this.getClass().getSimpleName());
-            throw new CommandBuildException(errMsg, e);
+            throw new DockerRequestException(errMsg, e);
         }
+        return null;
     }
 }
