@@ -2,7 +2,7 @@ package client.nettyserver.handlers;
 
 import client.docker.Container;
 import client.docker.commands.ExecCreateCommand;
-import client.docker.dockerclient.proxy.NettyDockerClient;
+import client.docker.dockerclient.NettyDockerClient;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleUserEventChannelHandler;
 

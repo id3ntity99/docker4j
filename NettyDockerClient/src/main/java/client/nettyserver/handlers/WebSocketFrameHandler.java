@@ -1,6 +1,6 @@
 package client.nettyserver.handlers;
 
-import client.docker.dockerclient.proxy.NettyDockerClient;
+import client.docker.dockerclient.NettyDockerClient;
 import client.nettyserver.listeners.ListenAndReadListener;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

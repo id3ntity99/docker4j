@@ -1,7 +1,6 @@
 package client.nettyserver.handlers;
 
-import client.docker.dockerclient.proxy.DockerClient;
-import client.docker.dockerclient.proxy.NettyDockerClient;
+import client.docker.dockerclient.NettyDockerClient;
 import client.nettyserver.listeners.ListenAndReadListener;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
