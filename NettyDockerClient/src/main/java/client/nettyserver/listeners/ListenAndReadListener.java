@@ -4,10 +4,10 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
-public class ConnectionListener implements ChannelFutureListener {
+public class ListenAndReadListener implements ChannelFutureListener {
     private Channel inboundChannel;
 
-    public ConnectionListener(Channel inboundChannel) {
+    public ListenAndReadListener(Channel inboundChannel) {
         this.inboundChannel = inboundChannel;
     }
 
