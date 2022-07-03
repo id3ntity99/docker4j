@@ -1,7 +1,8 @@
 package client.nettyserver.handlers;
 
-import client.docker.commands.CreateContainerCommand;
-import client.docker.dockerclient.proxy.ProxyDockerClient;
+import client.docker.dockerclient.proxy.DockerClient;
+import client.docker.dockerclient.proxy.NettyDockerClient;
+import client.nettyserver.listeners.ListenAndReadListener;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
@@ -11,32 +12,18 @@ import org.slf4j.LoggerFactory;
 
 public class WebSocketInitHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private ProxyDockerClient proxyDockerClient;
+    private NettyDockerClient dockerClient;
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         logger.info("channelActive() called");
         Channel inboundChannel = ctx.channel();
-        proxyDockerClient = new ProxyDockerClient().withInboundChannel(inboundChannel)
+        dockerClient = new NettyDockerClient().withInboundChannel(inboundChannel)
                 .withOutChannelClass(ctx.channel().getClass())
                 .withAddress("localhost", 2375)
                 .withEventLoop(ctx.channel().eventLoop())
                 .bootstrap();
-        proxyDockerClient.asyncConnect().addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
-                if (future.isSuccess()) {
-                    CreateContainerCommand createContainerCommand = new CreateContainerCommand().withImage("alpine")
-                            .withAttachStderr(true)
-                            .withAttachStdin(true)
-                            .withAttachStdout(true)
-                            .withTty(true)
-                            .withStdinOnce(false);
-                    ctx.pipeline().addLast(new CreateContainerHandler(proxyDockerClient));
-                    ctx.fireUserEventTriggered(createContainerCommand);
-                }
-            }
-        });
+        dockerClient.connect().sync().addListener(new ListenAndReadListener(inboundChannel));
     }
 
     @Override
@@ -44,17 +31,10 @@ public class WebSocketInitHandler extends SimpleChannelInboundHandler<FullHttpRe
         boolean isUpgradeReq = req.headers().get(HttpHeaderNames.CONNECTION).equalsIgnoreCase("Upgrade");
         boolean isWsUpgradeReq = req.headers().get(HttpHeaderNames.UPGRADE).equalsIgnoreCase("WebSocket");
         if (isUpgradeReq && isWsUpgradeReq) {
+            ctx.pipeline().addLast(new CreateContainerHandler(dockerClient));
+            ctx.pipeline().fireUserEventTriggered(isUpgradeReq);
             logger.info("Upgrading the connection...");
-            handleHandshake(ctx, req).sync().addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    if (future.isSuccess()) {
-                        ctx.pipeline().remove(WebSocketInitHandler.class);
-                        ctx.pipeline().addLast(new WebSocketFrameHandler(proxyDockerClient));
-                        ctx.pipeline().fireChannelActive();
-                    }
-                }
-            });
+            handleHandshake(ctx, req).sync().addListener(new WsHandshakeListener(ctx, dockerClient));
         } else {
             logger.debug("Invalid request (Expected HTTP upgrade request)");
             HttpResponse res = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
@@ -70,5 +50,24 @@ public class WebSocketInitHandler extends SimpleChannelInboundHandler<FullHttpRe
         WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(requestedUrl, null, true);
         WebSocketServerHandshaker handShaker = wsFactory.newHandshaker(req);
         return handShaker.handshake(ctx.channel(), req);
+    }
+
+    private static class WsHandshakeListener implements ChannelFutureListener {
+        private final ChannelHandlerContext ctx;
+        private final NettyDockerClient dockerClientInstance;
+
+        public WsHandshakeListener(ChannelHandlerContext ctx, NettyDockerClient dockerClientInstance) {
+            this.ctx = ctx;
+            this.dockerClientInstance = dockerClientInstance;
+        }
+
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+            if (future.isSuccess()) {
+                ctx.pipeline().remove(WebSocketInitHandler.class);
+                ctx.pipeline().addLast(new WebSocketFrameHandler(dockerClientInstance));
+                ctx.pipeline().fireChannelActive();
+            }
+        }
     }
 }

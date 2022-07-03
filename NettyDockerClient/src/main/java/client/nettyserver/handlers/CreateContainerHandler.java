@@ -1,42 +1,35 @@
 package client.nettyserver.handlers;
 
-import client.docker.commands.Command;
-import client.docker.commands.CreateContainerResponse;
-import client.docker.dockerclient.proxy.ProxyDockerClient;
-import client.nettyserver.SimpleResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import client.docker.Container;
+import client.docker.commands.CreateContainerCommand;
+import client.docker.dockerclient.proxy.NettyDockerClient;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleUserEventChannelHandler;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.FutureListener;
 
-public class CreateContainerHandler extends SimpleUserEventChannelHandler<Command> {
-    private ProxyDockerClient proxyDockerClient;
-    private CreateContainerResponse createContainerResponse;
+public class CreateContainerHandler extends SimpleUserEventChannelHandler<Boolean> {
+    private final NettyDockerClient nettyDockerClient;
 
-    public CreateContainerHandler(ProxyDockerClient proxyDockerClient) {
-        this.proxyDockerClient = proxyDockerClient;
+    public CreateContainerHandler(NettyDockerClient nettyDockerClient) {
+        this.nettyDockerClient = nettyDockerClient;
     }
 
     @Override
-    public void eventReceived(ChannelHandlerContext ctx, Command cmd) throws Exception {
-        proxyDockerClient.asyncRequest(cmd)
-                .addListener(new FutureListener<SimpleResponse>() {
-                    @Override
-                    public void operationComplete(Future<SimpleResponse> future) throws Exception {
-                        if (future.isSuccess()) {
-                            System.out.println("Container Created..");
-                            SimpleResponse res = future.get();
-                            createContainerResponse = new ObjectMapper().readValue(res.getBody(), CreateContainerResponse.class);
-                            String containerId = createContainerResponse.getId();
-                            ctx.pipeline().replace(
-                                    CreateContainerHandler.class,
-                                    "startContainerHandler",
-                                    new StartContainerHandler(proxyDockerClient)
-                            );
-                            ctx.fireUserEventTriggered(containerId);
-                        }
-                    }
-                });
+    public void eventReceived(ChannelHandlerContext ctx, Boolean evt) throws Exception {
+        System.out.println("Requesting create container");
+        Container container = new CreateContainerCommand().withDockerClient(nettyDockerClient)
+                .withImage("alpine")
+                .withAttachStderr(true)
+                .withAttachStdin(true)
+                .withAttachStdout(true)
+                .withTty(true)
+                .withStdinOnce(false)
+                .exec();
+        ctx.pipeline().replace(this, "startContainerHandler", new StartContainerHandler(nettyDockerClient));
+        ctx.fireUserEventTriggered(container);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        //TODO Implement this exception handler.
     }
 }

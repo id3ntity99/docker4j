@@ -1,33 +1,24 @@
 package client.nettyserver.handlers;
 
+import client.docker.Container;
 import client.docker.commands.StartContainerCommand;
-import client.docker.dockerclient.proxy.ProxyDockerClient;
-import client.nettyserver.SimpleResponse;
+import client.docker.dockerclient.proxy.NettyDockerClient;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleUserEventChannelHandler;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.FutureListener;
 
-public class StartContainerHandler extends SimpleUserEventChannelHandler<String> {
-    private final ProxyDockerClient proxyDockerClient;
+public class StartContainerHandler extends SimpleUserEventChannelHandler<Container> {
+    private final NettyDockerClient nettyDockerClient;
 
-    public StartContainerHandler(ProxyDockerClient proxyDockerClient) {
-        this.proxyDockerClient = proxyDockerClient;
+    public StartContainerHandler(NettyDockerClient nettyDockerClient) {
+        this.nettyDockerClient = nettyDockerClient;
     }
 
     @Override
-    public void eventReceived(ChannelHandlerContext ctx, String containerId) {
-        StartContainerCommand startCommand = new StartContainerCommand(containerId);
-        proxyDockerClient.asyncRequest(startCommand)
-                .addListener(new FutureListener<SimpleResponse>() {
-                    @Override
-                    public void operationComplete(Future<SimpleResponse> future) throws Exception {
-                        if (future.isSuccess()) {
-                            System.out.println("Container started..");
-                            ctx.pipeline().replace(StartContainerHandler.class, "execCreateHandler", new ExecCreateHandler(proxyDockerClient));
-                            ctx.fireUserEventTriggered(containerId);
-                        }
-                    }
-                });
+    public void eventReceived(ChannelHandlerContext ctx, Container container) {
+        new StartContainerCommand(container.getContainerId())
+                .withDockerClient(nettyDockerClient)
+                .exec();
+        ctx.pipeline().replace(this, "execCreateHandler", new ExecCreateHandler(nettyDockerClient));
+        ctx.fireUserEventTriggered(container);
     }
 }

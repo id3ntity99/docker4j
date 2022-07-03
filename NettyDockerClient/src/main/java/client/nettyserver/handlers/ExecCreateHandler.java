@@ -1,42 +1,29 @@
 package client.nettyserver.handlers;
 
+import client.docker.Container;
 import client.docker.commands.ExecCreateCommand;
-import client.docker.commands.ExecCreateResponse;
-import client.docker.dockerclient.proxy.ProxyDockerClient;
-import client.nettyserver.SimpleResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import client.docker.dockerclient.proxy.NettyDockerClient;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleUserEventChannelHandler;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.FutureListener;
 
-public class ExecCreateHandler extends SimpleUserEventChannelHandler<String> {
-    private final ProxyDockerClient proxyDockerClient;
+public class ExecCreateHandler extends SimpleUserEventChannelHandler<Container> {
+    private final NettyDockerClient nettyDockerClient;
 
-    public ExecCreateHandler(ProxyDockerClient proxyDockerClient) {
-        this.proxyDockerClient = proxyDockerClient;
+    public ExecCreateHandler(NettyDockerClient nettyDockerClient) {
+        this.nettyDockerClient = nettyDockerClient;
     }
 
     @Override
-    public void eventReceived(ChannelHandlerContext ctx, String containerId) {
-        ExecCreateCommand execCreateCommand = new ExecCreateCommand(containerId).withTty(true)
+    public void eventReceived(ChannelHandlerContext ctx, Container container) {
+        String execId = new ExecCreateCommand(container.getContainerId()).withDockerClient(nettyDockerClient)
+                .withTty(true)
                 .withAttachStderr(true)
                 .withAttachStdin(true)
                 .withAttachStdout(true)
                 .withUser("root")
-                .withCmd(new String[]{"/bin/sh"});
-
-        proxyDockerClient.asyncRequest(execCreateCommand).addListener(new FutureListener<SimpleResponse>() {
-            @Override
-            public void operationComplete(Future<SimpleResponse> future) throws Exception {
-                if (future.isSuccess()) {
-                    System.out.println("Exec created...");
-                    SimpleResponse res = future.get();
-                    ExecCreateResponse execRes = new ObjectMapper().readValue(res.getBody(), ExecCreateResponse.class);
-                    ctx.pipeline().replace(ExecCreateHandler.class, "execStartHandler", new ExecStartHandler(proxyDockerClient));
-                    ctx.fireUserEventTriggered(execRes);
-                }
-            }
-        });
+                .withCmd(new String[]{"/bin/sh"})
+                .exec();
+        ctx.pipeline().replace(this, "execStartHandler", new ExecStartHandler(nettyDockerClient));
+        ctx.pipeline().fireUserEventTriggered(execId);
     }
 }
