@@ -12,8 +12,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 public class ClientRunner {
-    private static final EventLoopGroup bossGroup = new NioEventLoopGroup(1, new DefaultThreadFactory("boss"));
-    private static final EventLoopGroup workerGroup = new NioEventLoopGroup(1, new DefaultThreadFactory("worker"));
+    private static final EventLoopGroup bossGroup = new NioEventLoopGroup(4, new DefaultThreadFactory("boss"));
+    private static final EventLoopGroup workerGroup = new NioEventLoopGroup(4, new DefaultThreadFactory("worker"));
 
     //TODO
     //  1. 1차 기능구현(웹소켓 클라이언트-서버 연결 및 도커 프록싱) 성공.
@@ -26,7 +26,7 @@ public class ClientRunner {
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.channel(NioServerSocketChannel.class)
                 .option(ChannelOption.SO_REUSEADDR, true)
-                .childOption(ChannelOption.AUTO_READ, false)
+                //.childOption(ChannelOption.AUTO_READ, false)
                 .group(bossGroup, workerGroup)
                 .childHandler(new InChannelInitializer());
         // 로컬 포트에 채널 바인딩.
