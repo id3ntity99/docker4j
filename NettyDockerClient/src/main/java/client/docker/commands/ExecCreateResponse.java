@@ -2,6 +2,7 @@ package client.docker.commands;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@Deprecated
 public class ExecCreateResponse {
     @JsonProperty("Id")
     private String execId;
