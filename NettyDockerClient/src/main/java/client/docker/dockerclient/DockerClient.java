@@ -1,4 +1,4 @@
-package client.docker.dockerclient.proxy;
+package client.docker.dockerclient;
 
 import client.nettyserver.SimpleResponse;
 import io.netty.channel.ChannelFuture;

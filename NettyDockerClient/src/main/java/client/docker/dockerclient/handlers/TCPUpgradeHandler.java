@@ -1,4 +1,4 @@
-package client.docker.dockerclient.proxy.handlers;
+package client.docker.dockerclient.handlers;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;

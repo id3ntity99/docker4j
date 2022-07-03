@@ -1,4 +1,4 @@
-package client.docker.dockerclient.proxy.decoder;
+package client.docker.dockerclient.decoder;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -6,7 +6,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
-import io.netty.util.CharsetUtil;
 
 //TODO FrameDecoder 구현하기.
 //  1. Frame Header를 수신받으면 header를 제거.

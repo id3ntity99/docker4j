@@ -1,6 +1,6 @@
-package client.docker.dockerclient.proxy.handlers;
+package client.docker.dockerclient.handlers;
 
-import client.docker.dockerclient.proxy.exceptions.DockerResponseException;
+import client.docker.dockerclient.exceptions.DockerResponseException;
 import client.nettyserver.SimpleResponse;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;

@@ -1,8 +1,8 @@
-package client.docker.dockerclient.proxy;
+package client.docker.dockerclient;
 
-import client.docker.dockerclient.proxy.decoder.DockerFrameDecoder;
-import client.docker.dockerclient.proxy.handlers.ProxyHandler;
-import client.docker.dockerclient.proxy.handlers.TCPUpgradeHandler;
+import client.docker.dockerclient.decoder.DockerFrameDecoder;
+import client.docker.dockerclient.handlers.TCPUpgradeHandler;
+import client.docker.dockerclient.handlers.ProxyHandler;
 import client.nettyserver.SimpleResponse;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;

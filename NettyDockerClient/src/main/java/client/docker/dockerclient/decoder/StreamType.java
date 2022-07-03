@@ -1,4 +1,4 @@
-package client.docker.dockerclient.proxy.decoder;
+package client.docker.dockerclient.decoder;
 
 public enum StreamType {
     STDIN("stdin"),
