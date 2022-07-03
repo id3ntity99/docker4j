@@ -1,12 +1,11 @@
 package client.docker;
 
 import client.docker.configs.config.Config;
-import client.docker.configs.hostconfig.HostConfig;
 
 public class Container {
-    public Config config;
-    public String containerId;
-    public String execId;
+    private Config config;
+    private String containerId;
+    private String execId;
 
     public Config getConfig() {
         return config;
