@@ -6,51 +6,57 @@ import client.docker.dockerclient.proxy.decoder.DockerFrameDecoder;
 import client.docker.dockerclient.proxy.exceptions.ProxyRequestException;
 import client.docker.dockerclient.proxy.handlers.ProxyHandler;
 import client.docker.dockerclient.proxy.handlers.TCPUpgradeHandler;
-import client.docker.dockerclient.sync.DockerClient;
 import client.nettyserver.SimpleResponse;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.Promise;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
-public class ProxyDockerClient extends DockerClient {
+public class DockerClient {
+    private EventLoopGroup eventLoop;
+    private InetSocketAddress dockerAddress;
+
+    private Bootstrap bootstrap;
+
+    private Channel outboundChannel;
+
     private Channel inboundChannel;
     private Class<? extends Channel> outChannelClass;
+    private Command command;
 
-    public ProxyDockerClient withInboundChannel(Channel inboundChannel) {
+    public DockerClient withInboundChannel(Channel inboundChannel) {
         this.inboundChannel = inboundChannel;
         return this;
     }
 
-    public ProxyDockerClient withOutChannelClass(Class<? extends Channel> outChannelClass) {
+    public DockerClient withOutChannelClass(Class<? extends Channel> outChannelClass) {
         this.outChannelClass = outChannelClass;
         return this;
     }
 
-    @Override
-    public ProxyDockerClient withEventLoop(EventLoopGroup eventLoop) {
+    public DockerClient withEventLoop(EventLoopGroup eventLoop) {
         this.eventLoop = eventLoop;
         return this;
     }
 
-    @Override
-    public ProxyDockerClient withAddress(String host, int port) throws UnknownHostException {
+    public DockerClient withAddress(String host, int port) throws UnknownHostException {
         this.dockerAddress = new InetSocketAddress(InetAddress.getByName(host), port);
         return this;
     }
 
-    @Override
-    public ProxyDockerClient bootstrap() {
-        Bootstrap bootstrap = new Bootstrap();
+    public DockerClient bootstrap() {
+        bootstrap = new Bootstrap();
         bootstrap.channel(outChannelClass)
-                .group(eventLoop)
+                .group(new NioEventLoopGroup(4, new DefaultThreadFactory("dockerClient")))
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     public void initChannel(SocketChannel ch) {
@@ -59,11 +65,10 @@ public class ProxyDockerClient extends DockerClient {
                         ch.pipeline().addLast(new ProxyHandler());
                     }
                 });
-        this.bootstrap = bootstrap;
         return this;
     }
 
-    public ChannelFuture asyncConnect() {
+    public ChannelFuture connect() {
         ChannelFuture future = bootstrap.connect(dockerAddress);
         this.outboundChannel = future.channel();
         return future;
@@ -73,9 +78,8 @@ public class ProxyDockerClient extends DockerClient {
         return this.outboundChannel;
     }
 
-    public Promise<SimpleResponse> asyncRequest(Command command) {
+    public Promise<SimpleResponse> request(FullHttpRequest req) {
         try {
-            FullHttpRequest req = command.build();
             Promise<SimpleResponse> promise = outboundChannel.eventLoop().newPromise();
             outboundChannel.pipeline().get(ProxyHandler.class).setPromise(promise);
             outboundChannel.writeAndFlush(req);
@@ -85,8 +89,8 @@ public class ProxyDockerClient extends DockerClient {
         }
     }
 
-    public ChannelFuture exec(Command execCommand) {
-        FullHttpRequest req = execCommand.build();
+
+    public ChannelFuture execute(FullHttpRequest req) {
         outboundChannel.pipeline().remove(ProxyHandler.class);
         outboundChannel.pipeline().addLast(new TCPUpgradeHandler());
         outboundChannel.pipeline().addLast(new DockerFrameDecoder(inboundChannel));
