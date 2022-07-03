@@ -8,11 +8,13 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 
 /**
+ * @deprecated
  * An implementation of the {@link ChannelFutureListener}.
  * This class instance is used for checking and logging that the
  * request (using {@link io.netty.channel.Channel#writeAndFlush(Object)}) was successful.
  * If the request was unsuccessful, this logs the cause.
  */
+@Deprecated
 public class RequestFutureListener implements ChannelFutureListener {
     private final Logger logger = LoggerFactory.getLogger(RequestFutureListener.class);
     private final String uri;
