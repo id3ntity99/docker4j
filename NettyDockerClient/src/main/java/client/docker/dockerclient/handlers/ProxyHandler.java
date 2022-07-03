@@ -1,7 +1,7 @@
 package client.docker.dockerclient.handlers;
 
 import client.docker.dockerclient.exceptions.DockerResponseException;
-import client.nettyserver.SimpleResponse;
+import client.docker.model.SimpleResponse;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpResponse;
@@ -19,7 +19,10 @@ public class ProxyHandler extends SimpleChannelInboundHandler<FullHttpResponse> 
             simpleRes.setBody(res.content().toString(CharsetUtil.UTF_8));
             promise.setSuccess(simpleRes);
         } else {
-            throw new DockerResponseException("Unsuccessful response: " + res.status().toString());
+            String errMessage = String.format("Unsuccessful response detected: %s %s",
+                    res.status().toString(),
+                    res.content().toString(CharsetUtil.UTF_8));
+            throw new DockerResponseException(errMessage);
         }
     }
 
