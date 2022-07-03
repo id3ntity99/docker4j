@@ -23,8 +23,8 @@ public class DockerFrameDecoder extends SimpleChannelInboundHandler<ByteBuf> {
         this.inboundChannel = inboundChannel;
     }
 
-    private StreamType checkStreamType(byte[] headerBytes) {
-        switch (headerBytes[0]) {
+    private StreamType checkStreamType(byte header) {
+        switch (header) {
             case 0:
                 return StreamType.STDIN;
             case 1:
@@ -36,23 +36,19 @@ public class DockerFrameDecoder extends SimpleChannelInboundHandler<ByteBuf> {
         }
     }
 
-    private byte[] checkHeader(ByteBuf in) {
-        byte[] headerBytes = new byte[8];
-        in.getBytes(0, headerBytes, 0, 8);
-        return headerBytes;
-    }
-
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
-        inboundChannel.read();
+        //inboundChannel.read();
         System.out.println("DockerFrameHandler Activated");
     }
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
+        StreamType type = checkStreamType(in.getByte(0));
+        if (!type.equals(StreamType.RAW)) {
+            in.readBytes(8);
+        }
         BinaryWebSocketFrame wsFrame = new BinaryWebSocketFrame(in);
-        System.out.print("Exec content: ");
-        System.out.println(in.toString(CharsetUtil.UTF_8));
         wsFrame.retain(1);
         inboundChannel.writeAndFlush(wsFrame);
     }
