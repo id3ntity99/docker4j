@@ -1,14 +1,13 @@
 package client.docker.dockerclient;
 
 import client.docker.dockerclient.decoder.DockerFrameDecoder;
-import client.docker.dockerclient.handlers.TCPUpgradeHandler;
 import client.docker.dockerclient.handlers.ProxyHandler;
-import client.nettyserver.SimpleResponse;
+import client.docker.dockerclient.handlers.TCPUpgradeHandler;
+import client.docker.model.SimpleResponse;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -21,8 +20,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
+// TODO NettyDockerClient -> DefaultDockerClient
 public class NettyDockerClient implements DockerClient {
-    private EventLoopGroup eventLoop;
     private InetSocketAddress dockerAddress;
 
     private Bootstrap bootstrap;
@@ -39,11 +38,6 @@ public class NettyDockerClient implements DockerClient {
 
     public NettyDockerClient withOutChannelClass(Class<? extends Channel> outChannelClass) {
         this.outChannelClass = outChannelClass;
-        return this;
-    }
-
-    public NettyDockerClient withEventLoop(EventLoopGroup eventLoop) {
-        this.eventLoop = eventLoop;
         return this;
     }
 
@@ -85,7 +79,7 @@ public class NettyDockerClient implements DockerClient {
         return outboundChannel.writeAndFlush(req);
     }
 
-    private static class DockerChannelInitializer extends ChannelInitializer<SocketChannel>{
+    private static class DockerChannelInitializer extends ChannelInitializer<SocketChannel> {
         @Override
         public void initChannel(SocketChannel ch) {
             ch.pipeline().addLast(new HttpClientCodec());
