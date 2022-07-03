@@ -1,5 +1,10 @@
 package client.nettyserver.handlers;
 
+import client.docker.Container;
+import client.docker.commands.CreateContainerCommand;
+import client.docker.commands.ExecCreateCommand;
+import client.docker.commands.ExecStartCommand;
+import client.docker.commands.StartContainerCommand;
 import client.docker.dockerclient.NettyDockerClient;
 import client.nettyserver.listeners.ListenAndReadListener;
 import io.netty.channel.*;
@@ -13,6 +18,43 @@ public class WebSocketInitHandler extends SimpleChannelInboundHandler<FullHttpRe
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private NettyDockerClient dockerClient;
 
+    private Container createContainer() {
+        return new CreateContainerCommand().withDockerClient(dockerClient)
+                .withImage("alpine")
+                .withAttachStderr(true)
+                .withAttachStdin(true)
+                .withAttachStdout(true)
+                .withTty(true)
+                .withStdinOnce(false)
+                .exec();
+    }
+
+    private void startContainer(Container container) {
+        new StartContainerCommand().withDockerClient(dockerClient)
+                .withContainerId(container.getContainerId())
+                .exec();
+    }
+
+    private String execCreate(Container container) {
+        return new ExecCreateCommand().withDockerClient(dockerClient)
+                .withContainerId(container.getContainerId())
+                .withTty(true)
+                .withAttachStderr(true)
+                .withAttachStdin(true)
+                .withAttachStdout(true)
+                .withUser("root")
+                .withCmd(new String[]{"/bin/sh"})
+                .exec();
+    }
+
+    private void execStart(String execId) {
+        new ExecStartCommand().withDockerClient(dockerClient)
+                .withExecId(execId)
+                .withTty(true)
+                .withDetach(false)
+                .exec();
+    }
+
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         logger.info("channelActive() called");
@@ -20,7 +62,6 @@ public class WebSocketInitHandler extends SimpleChannelInboundHandler<FullHttpRe
         dockerClient = new NettyDockerClient().withInboundChannel(inboundChannel)
                 .withOutChannelClass(ctx.channel().getClass())
                 .withAddress("localhost", 2375)
-                .withEventLoop(ctx.channel().eventLoop())
                 .bootstrap();
         dockerClient.connect().sync().addListener(new ListenAndReadListener(inboundChannel));
     }
@@ -30,8 +71,12 @@ public class WebSocketInitHandler extends SimpleChannelInboundHandler<FullHttpRe
         boolean isUpgradeReq = req.headers().get(HttpHeaderNames.CONNECTION).equalsIgnoreCase("Upgrade");
         boolean isWsUpgradeReq = req.headers().get(HttpHeaderNames.UPGRADE).equalsIgnoreCase("WebSocket");
         if (isUpgradeReq && isWsUpgradeReq) {
-            ctx.pipeline().addLast(new CreateContainerHandler(dockerClient));
-            ctx.pipeline().fireUserEventTriggered(isUpgradeReq);
+            //ctx.pipeline().addLast(new CreateContainerHandler(dockerClient));
+            //ctx.pipeline().fireUserEventTriggered(isUpgradeReq);
+            Container container = createContainer();
+            startContainer(container);
+            String execId = execCreate(container);
+            execStart(execId);
             logger.info("Upgrading the connection...");
             handleHandshake(ctx, req).sync().addListener(new WsHandshakeListener(ctx, dockerClient));
         } else {
