@@ -5,6 +5,8 @@ import client.docker.dockerclient.handlers.ProxyHandler;
 import client.docker.dockerclient.handlers.TCPUpgradeHandler;
 import client.docker.model.SimpleResponse;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -27,7 +29,7 @@ public class NettyDockerClient implements DockerClient {
     private Bootstrap bootstrap;
 
     private Channel outboundChannel;
-
+    private ByteBufAllocator allocator;
     private Channel inboundChannel;
     private Class<? extends Channel> outChannelClass;
 
@@ -50,6 +52,10 @@ public class NettyDockerClient implements DockerClient {
         return this.outboundChannel;
     }
 
+    public ByteBufAllocator getAllocator() {
+        return allocator;
+    }
+
     public NettyDockerClient bootstrap() {
         bootstrap = new Bootstrap();
         bootstrap.channel(outChannelClass)
@@ -61,6 +67,7 @@ public class NettyDockerClient implements DockerClient {
     public ChannelFuture connect() {
         ChannelFuture future = bootstrap.connect(dockerAddress);
         this.outboundChannel = future.channel();
+        allocator = future.channel().alloc();
         return future;
     }
 
@@ -82,6 +89,7 @@ public class NettyDockerClient implements DockerClient {
     private static class DockerChannelInitializer extends ChannelInitializer<SocketChannel> {
         @Override
         public void initChannel(SocketChannel ch) {
+            ch.config().setAllocator(new PooledByteBufAllocator(true));
             ch.pipeline().addLast(new HttpClientCodec());
             ch.pipeline().addLast(new HttpObjectAggregator(8092));
             ch.pipeline().addLast(new ProxyHandler());
