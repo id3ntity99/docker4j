@@ -3,6 +3,7 @@ package client.docker.commands;
 import client.docker.commands.exceptions.DockerRequestException;
 import client.docker.configs.exec.ExecStartConfig;
 import client.docker.dockerclient.NettyDockerClient;
+import client.docker.uris.URIs;
 import client.docker.util.RequestHelper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
@@ -44,8 +45,7 @@ public class ExecStartCommand extends Command<ExecStartCommand, Void> {
     @Override
     public Void exec() throws DockerRequestException {
         try {
-            String stringUri = String.format("http://localhost:2375/exec/%s/start", execId);
-            URI uri = new URI(stringUri);
+            URI uri = new URI(URIs.EXEC_START.uri(execId));
             String body = writer.writeValueAsString(config);
             ByteBuf bodyBuffer = Unpooled.copiedBuffer(body, CharsetUtil.UTF_8);
             FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);

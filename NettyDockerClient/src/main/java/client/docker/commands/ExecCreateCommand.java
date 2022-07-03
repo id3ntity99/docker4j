@@ -3,6 +3,7 @@ package client.docker.commands;
 import client.docker.commands.exceptions.DockerRequestException;
 import client.docker.configs.exec.ExecCreateConfig;
 import client.docker.dockerclient.NettyDockerClient;
+import client.docker.uris.URIs;
 import client.docker.util.RequestHelper;
 import client.docker.model.SimpleResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -85,8 +86,7 @@ public class ExecCreateCommand extends Command<ExecCreateCommand, String> {
     @Override
     public String exec() throws DockerRequestException {
         try {
-            String stringUri = String.format("http://localhost:2375/containers/%s/exec", containerId);
-            URI uri = new URI(stringUri);
+            URI uri = new URI(URIs.EXEC_CREATE.uri(containerId));
             String body = writer.writeValueAsString(config);
             ByteBuf bodyBuffer = Unpooled.copiedBuffer(body, CharsetUtil.UTF_8);
             FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
