@@ -3,9 +3,9 @@ package client.docker.commands;
 import client.docker.commands.exceptions.DockerRequestException;
 import client.docker.configs.exec.ExecCreateConfig;
 import client.docker.dockerclient.NettyDockerClient;
+import client.docker.model.SimpleResponse;
 import client.docker.uris.URIs;
 import client.docker.util.RequestHelper;
-import client.docker.model.SimpleResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -87,8 +87,8 @@ public class ExecCreateCommand extends Command<ExecCreateCommand, String> {
     public String exec() throws DockerRequestException {
         try {
             URI uri = new URI(URIs.EXEC_CREATE.uri(containerId));
-            String body = writer.writeValueAsString(config);
-            ByteBuf bodyBuffer = Unpooled.copiedBuffer(body, CharsetUtil.UTF_8);
+            byte[] body = writer.writeValueAsString(config).getBytes(CharsetUtil.UTF_8);
+            ByteBuf bodyBuffer = nettyDockerClient.getAllocator().heapBuffer().writeBytes(body);
             FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
             SimpleResponse res = nettyDockerClient.request(req).sync().get();
             return mapper.readTree(res.getBody()).get("Id").asText();

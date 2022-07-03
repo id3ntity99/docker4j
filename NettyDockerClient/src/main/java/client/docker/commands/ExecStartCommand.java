@@ -46,8 +46,8 @@ public class ExecStartCommand extends Command<ExecStartCommand, Void> {
     public Void exec() throws DockerRequestException {
         try {
             URI uri = new URI(URIs.EXEC_START.uri(execId));
-            String body = writer.writeValueAsString(config);
-            ByteBuf bodyBuffer = Unpooled.copiedBuffer(body, CharsetUtil.UTF_8);
+            byte[] body = writer.writeValueAsString(config).getBytes(CharsetUtil.UTF_8);
+            ByteBuf bodyBuffer = nettyDockerClient.getOutboundChannel().alloc().heapBuffer().writeBytes(body);
             FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
             req.headers().set(HttpHeaderNames.UPGRADE, "tcp"); //이 헤더를 추가하면 HTTP가 TCP로 업그레이드, FrameDecoder 활성화됨.
             nettyDockerClient.execute(req);

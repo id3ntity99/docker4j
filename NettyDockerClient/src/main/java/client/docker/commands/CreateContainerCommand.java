@@ -178,9 +178,9 @@ public class CreateContainerCommand extends Command<CreateContainerCommand, Cont
     @Override
     public Container exec() {
         try {
-            String body = writer.writeValueAsString(config);
+            byte[] body = writer.writeValueAsString(config).getBytes(CharsetUtil.UTF_8);
             URI uri = new URI(URIs.CREATE_CONTAINER.uri());
-            ByteBuf bodyBuffer = Unpooled.copiedBuffer(body, CharsetUtil.UTF_8);
+            ByteBuf bodyBuffer = nettyDockerClient.getAllocator().heapBuffer().writeBytes(body);
             FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
             SimpleResponse simpleRes = nettyDockerClient.request(req).sync().get();
             String containerId = mapper.readTree(simpleRes.getBody()).get("Id").asText();
