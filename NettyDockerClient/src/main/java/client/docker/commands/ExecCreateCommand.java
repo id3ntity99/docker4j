@@ -98,11 +98,11 @@ public class ExecCreateCommand extends Command<ExecCreateCommand, String> {
             return mapper.readTree(res.getBody()).get("Id").asText();
         } catch (RuntimeException | ExecutionException | JsonProcessingException | URISyntaxException e) {
             String errMsg = String.format("Exception raised while building command %s", this.getClass().getSimpleName());
-            throw new client.docker.dockerclient.proxy.exceptions.DockerRequestException(errMsg, e);
+            throw new DockerRequestException(errMsg, e);
         } catch (InterruptedException e) {
             String errMsg = String.format("Exception raised while building command %s", this.getClass().getSimpleName());
             Thread.currentThread().interrupt();
-            throw new client.docker.dockerclient.proxy.exceptions.DockerRequestException(errMsg, e);
+            throw new DockerRequestException(errMsg, e);
         }
     }
 }
