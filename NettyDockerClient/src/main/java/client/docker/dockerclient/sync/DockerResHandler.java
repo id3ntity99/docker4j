@@ -7,6 +7,7 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.Promise;
 
+@Deprecated
 public class DockerResHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
     private Promise<SimpleResponse> promise;
 
@@ -18,7 +19,6 @@ public class DockerResHandler extends SimpleChannelInboundHandler<FullHttpRespon
             simpleResponse.setBody(res.content().toString(CharsetUtil.UTF_8));
             promise.setSuccess(simpleResponse);
         } else {
-            // TODO Create specific Exception for this case.
             throw new Exception("Request failed");
         }
     }

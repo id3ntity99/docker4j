@@ -18,8 +18,10 @@ import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
 
 /**
+ * @deprecated
  * Sync docker client.
  */
+@Deprecated
 public class DockerClient {
     protected EventLoopGroup eventLoop;
     protected InetSocketAddress dockerAddress;
@@ -73,8 +75,7 @@ public class DockerClient {
         this.outboundChannel = future.channel();
     }
 
-    public SimpleResponse request(Command command) throws InterruptedException, ExecutionException {
-        FullHttpRequest req = command.build();
+    public SimpleResponse request(FullHttpRequest req) throws InterruptedException, ExecutionException {
         Promise<SimpleResponse> promise = outboundChannel.eventLoop().newPromise();
         outboundChannel.pipeline().get(DockerResHandler.class).setPromise(promise);
         outboundChannel.writeAndFlush(req).sync();
