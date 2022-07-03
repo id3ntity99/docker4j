@@ -8,7 +8,7 @@ import client.docker.configs.config.HealthConfig;
 import client.docker.configs.config.Volumes;
 import client.docker.configs.hostconfig.HostConfig;
 import client.docker.configs.hostconfig.networkingconfig.NetworkingConfig;
-import client.docker.dockerclient.proxy.NettyDockerClient;
+import client.docker.dockerclient.NettyDockerClient;
 import client.docker.uris.URIs;
 import client.nettyserver.SimpleResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;

@@ -1,7 +1,7 @@
 package client.docker.commands;
 
 import client.docker.commands.exceptions.DockerRequestException;
-import client.docker.dockerclient.proxy.NettyDockerClient;
+import client.docker.dockerclient.NettyDockerClient;
 import client.docker.uris.URIs;
 import io.netty.handler.codec.http.*;
 

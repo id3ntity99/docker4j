@@ -2,7 +2,7 @@ package client.docker.commands;
 
 import client.docker.commands.exceptions.DockerRequestException;
 import client.docker.configs.exec.ExecCreateConfig;
-import client.docker.dockerclient.proxy.NettyDockerClient;
+import client.docker.dockerclient.NettyDockerClient;
 import client.nettyserver.SimpleResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
