@@ -4,6 +4,7 @@ import client.docker.model.Container;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -15,25 +16,35 @@ import org.slf4j.LoggerFactory;
 
 public abstract class DockerResponseHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
     protected static final ObjectMapper mapper = new ObjectMapper().setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-    protected DockerRequest nextRequest = null;
+    protected DockerRequest nextRequest;
     protected Container container;
     protected Promise<Container> promise;
+    protected ByteBufAllocator allocator;
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    DockerResponseHandler(Container container, DockerRequest nextRequest, Promise<Container> promise) {
+    DockerResponseHandler(Container container, DockerRequest nextRequest, Promise<Container> promise, ByteBufAllocator allocator) {
         this.container = container;
         this.nextRequest = nextRequest;
         this.promise = promise;
+        this.allocator = allocator;
     }
 
-    public static class NextRequestListener implements ChannelFutureListener {
+    protected void handOver() {
+        nextRequest.setContainer(container)
+                .setPromise(promise)
+                .setAllocator(allocator);
+    }
+
+    protected static class NextRequestListener implements ChannelFutureListener {
         private final Logger logger;
         private final ChannelHandlerContext ctx;
+        private final DockerResponseHandler currentHandler;
         private final DockerRequest nextRequest;
 
-        public NextRequestListener(Logger logger, ChannelHandlerContext ctx, DockerRequest nextRequest) {
+        public NextRequestListener(Logger logger, ChannelHandlerContext ctx, DockerResponseHandler currentHandler, DockerRequest nextRequest) {
             this.logger = logger;
             this.ctx = ctx;
+            this.currentHandler = currentHandler;
             this.nextRequest = nextRequest;
         }
 
@@ -42,7 +53,7 @@ public abstract class DockerResponseHandler extends SimpleChannelInboundHandler<
             if (future.isSuccess()) {
                 logger.debug(String.format("Successfully sent %s", nextRequest.getClass().getSimpleName()));
                 DockerResponseHandler nextHandler = nextRequest.handler();
-                ctx.pipeline().replace(ExecCreateHandler.class, nextHandler.toString(), nextHandler);
+                ctx.pipeline().replace(currentHandler.getClass(), nextHandler.toString(), nextHandler);
             } else {
                 String errMsg = String.format("Exception raised while sending next %s", nextRequest.getClass().getSimpleName());
                 logger.error(errMsg, future.cause());
