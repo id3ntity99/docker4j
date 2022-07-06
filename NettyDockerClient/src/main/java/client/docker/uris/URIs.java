@@ -3,6 +3,9 @@ package client.docker.uris;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 public enum URIs {
     DOCKER_DAEMON("http://localhost:2375"),
     CREATE_CONTAINER("http://localhost:2375/containers/create"),
@@ -19,11 +22,23 @@ public enum URIs {
         this.stringUri = stringUri;
     }
 
-    public String uri() {
-        return stringUri;
+    public URI uri() {
+        URI uri = null;
+        try {
+            uri = new URI(stringUri);
+        } catch(URISyntaxException e) {
+           logger.error("Wrong uri", e);
+        }
+        return uri;
     }
 
-    public String uri(String id) {
-        return String.format(stringUri, id);
+    public URI uri(String id) {
+        URI uri = null;
+        try {
+            uri = new URI(String.format(stringUri, id));
+        } catch(URISyntaxException e) {
+            logger.error("Wrong uri", e);
+        }
+        return uri;
     }
 }
