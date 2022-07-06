@@ -1,6 +1,7 @@
 package client.docker.request;
 
 import client.docker.dockerclient.NettyDockerClient;
+import client.docker.request.exceptions.DuplicationException;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import org.slf4j.Logger;
@@ -150,22 +151,19 @@ public class RequestLinker {
      */
     public RequestLinker link() throws DuplicationException {
         checkDuplicates();
+        final int lastIndex = tail - 1;
         DockerRequest nextRequest;
         DockerRequest currentRequest;
         for (int i = 0; i <= tail - 1; i++) {
             currentRequest = requests[i];  /*Get current index's request;*/
-            if (i != tail - 1) {
+            if (i != lastIndex) { // If current request has next;
                 nextRequest = requests[i + 1]; /* Get next index's request; */
-                currentRequest.setNextRequest(nextRequest); /* Set next request to current request; */
-                String log = String.format("Linked: (%s, %d) =====> (%s, %d)",
-                        currentRequest,
-                        currentRequest.hashCode(),
-                        nextRequest,
-                        nextRequest.hashCode());
+                currentRequest.setNext(nextRequest); /* Set next request to current request; */
+                String log = String.format("Linked: (%s, %d) =====> (%s, %d)", currentRequest, currentRequest.hashCode(), nextRequest, nextRequest.hashCode());
                 logger.debug(log);
                 currentRequest.setAllocator(allocator);
-                requests[i] = currentRequest; /* update request of the array; */
             }
+            requests[i] = currentRequest; /* update request in the array*/
         }
         String log = String.format("Completed request linking: %s", Arrays.toString(requests));
         logger.debug(log);
