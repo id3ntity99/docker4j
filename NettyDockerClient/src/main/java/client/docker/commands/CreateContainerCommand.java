@@ -1,6 +1,6 @@
 package client.docker.commands;
 
-import client.docker.commands.exceptions.DockerRequestException;
+import client.docker.request.exceptions.DockerRequestException;
 import client.docker.configs.config.Config;
 import client.docker.configs.config.ExposedPorts;
 import client.docker.configs.config.HealthConfig;
@@ -9,12 +9,11 @@ import client.docker.configs.hostconfig.HostConfig;
 import client.docker.configs.hostconfig.networkingconfig.NetworkingConfig;
 import client.docker.dockerclient.NettyDockerClient;
 import client.docker.model.Container;
-import client.docker.util.RequestHelper;
 import client.docker.model.SimpleResponse;
 import client.docker.uris.URIs;
+import client.docker.util.RequestHelper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.util.CharsetUtil;
@@ -25,11 +24,13 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
+ * @deprecated Use {@link client.docker.request.DockerRequest} instead.
  * Create config and request Docker daemon for creating a container.
  * Since this class creates {@link Config}, user doesn't have to create {@link Config} separately.
  * All the user has to do is just using the methods of this class to configure the {@link Config},
  * and invoke {@link CreateContainerCommand#exec()} to make a request.
  */
+@Deprecated
 public class CreateContainerCommand extends Command<CreateContainerCommand, Container> {
     private final Config config = new Config();
     private NettyDockerClient nettyDockerClient;
@@ -179,14 +180,14 @@ public class CreateContainerCommand extends Command<CreateContainerCommand, Cont
     public Container exec() {
         try {
             byte[] body = writer.writeValueAsString(config).getBytes(CharsetUtil.UTF_8);
-            URI uri = new URI(URIs.CREATE_CONTAINER.uri());
+            URI uri = URIs.CREATE_CONTAINER.uri();
             ByteBuf bodyBuffer = nettyDockerClient.getAllocator().heapBuffer().writeBytes(body);
             FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
             SimpleResponse simpleRes = nettyDockerClient.request(req).sync().get();
             String containerId = mapper.readTree(simpleRes.getBody()).get("Id").asText();
             return new Container().setContainerId(containerId).setConfig(config);
 
-        } catch (JsonProcessingException | URISyntaxException e) {
+        } catch (JsonProcessingException e) {
             String errMsg = String.format("Exception raised while build the %s command", this.getClass().getSimpleName());
             throw new DockerRequestException(errMsg, e);
 
