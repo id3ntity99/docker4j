@@ -17,20 +17,16 @@ public abstract class DockerRequest {
     protected static final ObjectWriter writer = mapper.writer().withDefaultPrettyPrinter();
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected DockerRequest nextRequest = null;
-    protected Container container = new Container();
+    protected Container container;
     protected ByteBufAllocator allocator = new PooledByteBufAllocator();
     protected Promise<Container> promise;
 
     protected DockerRequest(DockerRequestBuilder builder) {
     }
 
-    public DockerRequest setPromise(Promise<Container> promise) {
+    protected DockerRequest setPromise(Promise<Container> promise) {
         this.promise = promise;
         return this;
-    }
-
-    public Promise<Container> getPromise() {
-        return promise;
     }
 
     /**
@@ -67,6 +63,10 @@ public abstract class DockerRequest {
     protected DockerRequest setAllocator(ByteBufAllocator allocator) {
         this.allocator = allocator;
         return this;
+    }
+
+    public Promise<Container> getPromise() {
+        return promise;
     }
 
     @Override
