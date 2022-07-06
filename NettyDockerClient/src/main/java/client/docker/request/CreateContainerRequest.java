@@ -6,19 +6,12 @@ import client.docker.configs.config.HealthConfig;
 import client.docker.configs.config.Volumes;
 import client.docker.configs.hostconfig.HostConfig;
 import client.docker.configs.hostconfig.networkingconfig.NetworkingConfig;
-import client.docker.dockerclient.exceptions.DockerResponseException;
-import client.docker.model.Container;
 import client.docker.request.exceptions.DockerRequestException;
 import client.docker.uris.URIs;
 import client.docker.util.RequestHelper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.util.CharsetUtil;
 
@@ -31,24 +24,6 @@ public class CreateContainerRequest extends DockerRequest {
     public CreateContainerRequest(Builder builder) {
         super(builder);
         this.config = builder.config;
-    }
-
-    @Override
-    protected CreateContainerRequest setContainer(Container container) {
-        this.container = container;
-        return this;
-    }
-
-    @Override
-    protected DockerRequest setNextRequest(DockerRequest nextRequest) {
-        this.nextRequest = nextRequest;
-        return this;
-    }
-
-    @Override
-    protected DockerRequest setAllocator(ByteBufAllocator allocator) {
-        this.allocator = allocator;
-        return this;
     }
 
     @Override
@@ -67,10 +42,10 @@ public class CreateContainerRequest extends DockerRequest {
 
     @Override
     public DockerResponseHandler handler() {
-        return new CreateContainerResponseHandler(container, nextRequest);
+        return new CreateContainerHandler(container, nextRequest, promise);
     }
 
-    public static class Builder implements DockerRequest.Builder {
+    public static class Builder implements DockerRequestBuilder {
         private final Config config = new Config();
 
         public Builder withHostConfig(HostConfig hostConfig) {
@@ -211,53 +186,6 @@ public class CreateContainerRequest extends DockerRequest {
         @Override
         public DockerRequest build() {
             return new CreateContainerRequest(this);
-        }
-    }
-
-    private static class CreateContainerResponseHandler extends DockerResponseHandler {
-        public CreateContainerResponseHandler(Container container, DockerRequest nextRequest) {
-            super(container, nextRequest);
-            this.container = container;
-            this.nextRequest = nextRequest;
-        }
-
-        private void handleResponse(ChannelHandlerContext ctx, FullHttpResponse res) throws Exception {
-            String jsonBody = res.content().toString(CharsetUtil.UTF_8);
-            String containerId = mapper.readTree(jsonBody).get("Id").asText();
-            container.setContainerId(containerId);
-            if (nextRequest != null) {
-                logger.debug(String.format("Next request detected: %s", nextRequest.getClass().getSimpleName()));
-                nextRequest.setContainer(container);
-                FullHttpRequest nextHttpReq = nextRequest.render();
-                ctx.channel().writeAndFlush(nextHttpReq).addListener(new ChannelFutureListener() {
-                    @Override
-                    public void operationComplete(ChannelFuture future) throws Exception {
-                        if (future.isSuccess()) {
-                            logger.debug(String.format("Successfully sent %s", nextRequest.getClass().getSimpleName()));
-                            DockerResponseHandler nextHandler = nextRequest.handler();
-                            ctx.pipeline().replace(CreateContainerResponseHandler.class, nextHandler.toString(), nextHandler);
-                        } else {
-                            String errMsg = String.format("Exception raised while sending next %s", nextRequest.getClass().getSimpleName());
-                            logger.error(errMsg, future.cause());
-                        }
-                    }
-                });
-            } else {
-                logger.info(String.format("There are no more requests... removing %s", this.getClass().getSimpleName()));
-                ctx.pipeline().remove(this);
-            }
-        }
-
-        @Override
-        public void channelRead0(ChannelHandlerContext ctx, FullHttpResponse res) throws Exception {
-            if (res.status().code() == 201)
-                handleResponse(ctx, res);
-            else {
-                String errMessage = String.format("Unsuccessful response detected: %s %s",
-                        res.status().toString(),
-                        res.content().toString(CharsetUtil.UTF_8));
-                throw new DockerResponseException(errMessage);
-            }
         }
     }
 }

@@ -7,9 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,13 +19,19 @@ public abstract class DockerRequest {
     protected DockerRequest nextRequest = null;
     protected Container container = new Container();
     protected ByteBufAllocator allocator = new PooledByteBufAllocator();
+    protected Promise<Container> promise;
 
-    protected DockerRequest(Builder builder) {
+    protected DockerRequest(DockerRequestBuilder builder) {
     }
 
-    public abstract FullHttpRequest render() throws Exception;
+    public DockerRequest setPromise(Promise<Container> promise) {
+        this.promise = promise;
+        return this;
+    }
 
-    public abstract DockerResponseHandler handler();
+    public Promise<Container> getPromise() {
+        return promise;
+    }
 
     /**
      * Internal use only. Mostly, methods starting with "set" word are used by {@link RequestLinker}.
@@ -35,7 +40,10 @@ public abstract class DockerRequest {
      * @param container
      * @return
      */
-    protected abstract DockerRequest setContainer(Container container);
+    protected DockerRequest setContainer(Container container) {
+        this.container = container;
+        return this;
+    }
 
     /**
      * Internal use only. Mostly, methods startng with "set" word are used by {@link RequestLinker}.
@@ -44,7 +52,10 @@ public abstract class DockerRequest {
      * @param nextRequest
      * @return
      */
-    protected abstract DockerRequest setNextRequest(DockerRequest nextRequest);
+    protected DockerRequest setNext(DockerRequest nextRequest) {
+        this.nextRequest = nextRequest;
+        return this;
+    }
 
     /**
      * Internal use only. Mostly, methods starting with "set" word are used by {@link RequestLinker}.
@@ -53,23 +64,17 @@ public abstract class DockerRequest {
      * @param allocator
      * @return
      */
-    protected abstract DockerRequest setAllocator(ByteBufAllocator allocator);
+    protected DockerRequest setAllocator(ByteBufAllocator allocator) {
+        this.allocator = allocator;
+        return this;
+    }
 
     @Override
     public String toString() {
         return this.getClass().getSimpleName();
     }
 
-    interface Builder {
-        DockerRequest build();
-    }
+    public abstract FullHttpRequest render() throws Exception;
 
-    public abstract static class DockerResponseHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
-        protected DockerRequest nextRequest = null;
-        protected Container container;
-        protected final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-        DockerResponseHandler(Container container, DockerRequest nextRequest) {
-        }
-    }
+    public abstract DockerResponseHandler handler();
 }
