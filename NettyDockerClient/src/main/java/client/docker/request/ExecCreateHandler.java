@@ -2,6 +2,7 @@ package client.docker.request;
 
 import client.docker.dockerclient.exceptions.DockerResponseException;
 import client.docker.model.Container;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
@@ -9,8 +10,9 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.Promise;
 
 class ExecCreateHandler extends DockerResponseHandler {
-    public ExecCreateHandler(Container container, DockerRequest nextRequest, Promise<Container> promise) {
-        super(container, nextRequest, promise);
+    public ExecCreateHandler(Container container, DockerRequest nextRequest
+            , Promise<Container> promise, ByteBufAllocator allocator) {
+        super(container, nextRequest, promise, allocator);
     }
 
     private void handleResponse(ChannelHandlerContext ctx, FullHttpResponse res) throws Exception {
@@ -19,9 +21,9 @@ class ExecCreateHandler extends DockerResponseHandler {
         container.setExecId(execId);
         if (nextRequest != null) {
             logger.debug("Next request detected {}", nextRequest.getClass().getSimpleName());
-            nextRequest.setContainer(container).setPromise(promise);
+            handOver();
             FullHttpRequest nextHttpReq = nextRequest.render();
-            ctx.channel().writeAndFlush(nextHttpReq).addListener(new NextRequestListener(logger, ctx, nextRequest));
+            ctx.channel().writeAndFlush(nextHttpReq).addListener(new NextRequestListener(logger, ctx, this, nextRequest));
         } else {
             logger.info("There are no more requests... removing {}", this.getClass().getSimpleName());
             promise.setSuccess(container);

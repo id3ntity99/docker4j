@@ -42,7 +42,7 @@ public class CreateContainerRequest extends DockerRequest {
 
     @Override
     public DockerResponseHandler handler() {
-        return new CreateContainerHandler(container, nextRequest, promise);
+        return new CreateContainerHandler(container, nextRequest, promise, allocator);
     }
 
     public static class Builder implements DockerRequestBuilder {

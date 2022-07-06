@@ -37,7 +37,7 @@ public class ExecCreateRequest extends DockerRequest {
 
     @Override
     public DockerResponseHandler handler() {
-        return new ExecCreateHandler(container, nextRequest, promise);
+        return new ExecCreateHandler(container, nextRequest, promise, allocator);
     }
 
     public static class Builder implements DockerRequestBuilder {
