@@ -1,9 +1,11 @@
 package client.docker.request;
 
 import client.docker.dockerclient.NettyDockerClient;
+import client.docker.model.Container;
 import client.docker.request.exceptions.DuplicationException;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
+import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +65,7 @@ public class RequestLinker {
      * This allocator will be passed to the each {@link DockerRequest} and used by {@link DockerRequest#render()}.
      */
     private ByteBufAllocator allocator;
+    private Promise<Container> promise;
 
     /**
      * Create new RequestLinker with specified size.
@@ -81,6 +84,7 @@ public class RequestLinker {
     public void setAllocator(ByteBufAllocator allocator) {
         this.allocator = allocator;
     }
+    public void setPromise(Promise<Container> promise) {this.promise = promise;}
 
     /**
      * Get a {@link DockerRequest} at the specified index.
@@ -156,6 +160,9 @@ public class RequestLinker {
         DockerRequest currentRequest;
         for (int i = 0; i <= tail - 1; i++) {
             currentRequest = requests[i];  /*Get current index's request;*/
+            if (i == 0) {
+                currentRequest.setAllocator(allocator).setPromise(promise).setContainer(new Container());
+            }
             if (i != lastIndex) { // If current request has next;
                 nextRequest = requests[i + 1]; /* Get next index's request; */
                 currentRequest.setNext(nextRequest); /* Set next request to current request; */
