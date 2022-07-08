@@ -1,8 +1,9 @@
 package client.docker;
 
+import client.docker.exceptions.DuplicationException;
 import client.docker.model.Container;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -21,19 +22,12 @@ import java.net.UnknownHostException;
 public class NettyDockerClient implements DockerClient {
     private EventLoopGroup eventLoopGroup;
     private InetSocketAddress dockerAddress;
-    private Bootstrap bootstrap;
     private Channel outboundChannel;
-    private Channel inboundChannel;
     private Class<? extends Channel> outChannelClass;
     private RequestLinker linker;
 
     public NettyDockerClient withEventLoopGroup(EventLoopGroup eventLoopGroup) {
         this.eventLoopGroup = eventLoopGroup;
-        return this;
-    }
-
-    public NettyDockerClient withInboundChannel(Channel inboundChannel) {
-        this.inboundChannel = inboundChannel;
         return this;
     }
 
@@ -52,64 +46,57 @@ public class NettyDockerClient implements DockerClient {
         return this;
     }
 
-    // FIXME create write() method instead of exposing this one.
-    public Channel getOutboundChannel() {
-        return this.outboundChannel;
-    }
-
-    public ByteBufAllocator getAllocator() {
-        return outboundChannel.alloc();
-    }
-
-    public NettyDockerClient bootstrap() {
-        bootstrap = new Bootstrap();
-        bootstrap.channel(outChannelClass)
-                .group(eventLoopGroup)
-                .handler(new ResponseHandlerInit(linker));
-        return this;
-    }
-
+    @Override
     public ChannelFuture connect() {
-        ChannelFuture future = bootstrap.connect(dockerAddress);
+        ChannelFuture future = new Bootstrap().channel(outChannelClass)
+                .group(eventLoopGroup)
+                .handler(new DockerClientInit())
+                .connect(dockerAddress);
         this.outboundChannel = future.channel();
         return future;
     }
 
-    public Promise<Container> request() throws Exception {
-        DockerRequest firstRequest = linker.get(0);
+    private DockerRequest configureLinker() throws Exception, DuplicationException {
+        Promise<Object> promise1 = outboundChannel.eventLoop().newPromise();
+        linker.setAllocator(outboundChannel.alloc());
+        linker.setPromise(promise1);
+        return linker.link().get(0);
+    }
+
+    public Promise<Object> request() throws Exception {
+        DockerRequest firstRequest = configureLinker();
+        outboundChannel.pipeline().addLast(firstRequest.handler());
         FullHttpRequest request = firstRequest.render();
         outboundChannel.writeAndFlush(request);
         return firstRequest.getPromise();
     }
 
 
-    public ChannelFuture execute(FullHttpRequest req) {
+    @Override
+    public void interact() throws Exception {
+        DockerRequest firstRequest = configureLinker();
+        outboundChannel.pipeline().addLast(firstRequest.handler());
+        FullHttpRequest request = firstRequest.render();
         outboundChannel.pipeline().addLast(new TCPUpgradeHandler());
-        outboundChannel.pipeline().addLast(new DockerFrameDecoder(inboundChannel));
-        return outboundChannel.writeAndFlush(req);
+        outboundChannel.writeAndFlush(request);
     }
 
-    private static class ResponseHandlerInit extends ChannelInitializer<SocketChannel> {
-        private final RequestLinker linker;
+    @Override
+    public ChannelFuture write(ByteBuf in) {
+        return outboundChannel.writeAndFlush(in);
+    }
 
-        public ResponseHandlerInit(RequestLinker linker) {
-            this.linker = linker;
-        }
+    @Override
+    public void writeAndForget(ByteBuf in) {
+        outboundChannel.writeAndFlush(in);
+    }
 
-        private void configureLinker(SocketChannel ch) {
-            Promise<Container> promise = ch.eventLoop().newPromise();
-            linker.setAllocator(ch.alloc());
-            linker.setPromise(promise);
-        }
-
+    private static class DockerClientInit extends ChannelInitializer<SocketChannel> {
         @Override
         public void initChannel(SocketChannel ch) throws Exception {
-            configureLinker(ch);
-            DockerRequest firstRequest = linker.link().get(0);
             ch.config().setAllocator(new PooledByteBufAllocator(true));
             ch.pipeline().addLast(new HttpClientCodec());
             ch.pipeline().addLast(new HttpObjectAggregator(8092));
-            ch.pipeline().addLast(firstRequest.handler());
         }
     }
 }
