@@ -1,4 +1,4 @@
-package client.docker.request.internal.uris;
+package client.docker.request.internal.http;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,4 +1,4 @@
-package client.docker.request.internal.util;
+package client.docker.request.internal.http;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
