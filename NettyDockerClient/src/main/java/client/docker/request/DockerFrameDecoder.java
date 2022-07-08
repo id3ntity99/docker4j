@@ -1,6 +1,6 @@
 package client.docker.request;
 
-import client.docker.request.internal.util.StreamType;
+import client.docker.request.internal.stream.StreamType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
