@@ -1,7 +1,5 @@
 package client.docker.model;
 
-import client.docker.configs.config.Config;
-
 public class Container {
     private Config config;
     private String containerId;
