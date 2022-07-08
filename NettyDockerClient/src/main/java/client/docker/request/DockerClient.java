@@ -1,6 +1,6 @@
 package client.docker.request;
 
-import client.docker.model.SimpleResponse;
+import client.docker.model.Container;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.util.concurrent.Promise;
@@ -8,6 +8,6 @@ import io.netty.util.concurrent.Promise;
 public interface DockerClient {
     DockerClient bootstrap();
     ChannelFuture connect();
-    Promise<SimpleResponse> request(FullHttpRequest req);
+    Promise<Container> request() throws Exception;
     ChannelFuture execute(FullHttpRequest req);
 }

@@ -1,8 +1,6 @@
 package client.docker.request;
 
-import client.docker.dockerclient.handlers.ProxyHandler;
 import client.docker.model.Container;
-import client.docker.model.SimpleResponse;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -19,8 +17,6 @@ import io.netty.util.concurrent.Promise;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class NettyDockerClient implements DockerClient {
     private EventLoopGroup eventLoopGroup;
@@ -29,13 +25,7 @@ public class NettyDockerClient implements DockerClient {
     private Channel outboundChannel;
     private Channel inboundChannel;
     private Class<? extends Channel> outChannelClass;
-    private RequestLinker aggregate;
-    private List<DockerRequest> requestList = new ArrayList<>();
-
-    public NettyDockerClient add(DockerRequest request) {
-        requestList.add(request);
-        return this;
-    }
+    private RequestLinker linker;
 
     public NettyDockerClient withEventLoopGroup(EventLoopGroup eventLoopGroup) {
         this.eventLoopGroup = eventLoopGroup;
@@ -57,11 +47,12 @@ public class NettyDockerClient implements DockerClient {
         return this;
     }
 
-    public NettyDockerClient withAggregate(RequestLinker aggregate) {
-        this.aggregate = aggregate;
+    public NettyDockerClient withLinker(RequestLinker linker) {
+        this.linker = linker;
         return this;
     }
 
+    // FIXME create write() method instead of exposing this one.
     public Channel getOutboundChannel() {
         return this.outboundChannel;
     }
@@ -74,7 +65,7 @@ public class NettyDockerClient implements DockerClient {
         bootstrap = new Bootstrap();
         bootstrap.channel(outChannelClass)
                 .group(eventLoopGroup)
-                .handler(new ResponseHandlerInit(aggregate));
+                .handler(new ResponseHandlerInit(linker));
         return this;
     }
 
@@ -84,15 +75,8 @@ public class NettyDockerClient implements DockerClient {
         return future;
     }
 
-    @Deprecated
-    public Promise<SimpleResponse> request(FullHttpRequest req) {
-        Promise<SimpleResponse> promise = outboundChannel.eventLoop().newPromise();
-        outboundChannel.pipeline().get(ProxyHandler.class).setPromise(promise);
-        return promise;
-    }
-
     public Promise<Container> request() throws Exception {
-        DockerRequest firstRequest = aggregate.get(0);
+        DockerRequest firstRequest = linker.get(0);
         FullHttpRequest request = firstRequest.render();
         outboundChannel.writeAndFlush(request);
         return firstRequest.getPromise();
@@ -120,11 +104,11 @@ public class NettyDockerClient implements DockerClient {
 
         @Override
         public void initChannel(SocketChannel ch) throws Exception {
+            configureLinker(ch);
+            DockerRequest firstRequest = linker.link().get(0);
             ch.config().setAllocator(new PooledByteBufAllocator(true));
             ch.pipeline().addLast(new HttpClientCodec());
             ch.pipeline().addLast(new HttpObjectAggregator(8092));
-            configureLinker(ch);
-            DockerRequest firstRequest = linker.link().get(0);
             ch.pipeline().addLast(firstRequest.handler());
         }
     }
