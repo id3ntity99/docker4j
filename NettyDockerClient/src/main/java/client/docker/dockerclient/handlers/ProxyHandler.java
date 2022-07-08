@@ -1,6 +1,6 @@
 package client.docker.dockerclient.handlers;
 
-import client.docker.dockerclient.exceptions.DockerResponseException;
+import client.docker.request.exceptions.DockerResponseException;
 import client.docker.model.SimpleResponse;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -8,6 +8,7 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.Promise;
 
+@Deprecated
 public class ProxyHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
     private Promise<SimpleResponse> promise;
 
