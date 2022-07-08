@@ -49,6 +49,7 @@ import java.util.Arrays;
  * {@link #checkDuplicates()} 메서드는 이를 방지하기위해 존재한다.
  * 설명이 잘 되었는지는 모르겠으나, 이해가 안된다면 이것 하나만 기억하라: 절대로 {@link DockerRequest}의 인스턴스를 {@link RequestLinker}에 재사용하지 마라!
  */
+//FIXME RequestLinker 인스턴스를 재사용할 수 있도록 만들기.
 public class RequestLinker {
     private final Logger logger = LoggerFactory.getLogger(RequestLinker.class);
     /**
@@ -64,7 +65,7 @@ public class RequestLinker {
      * This allocator will be passed to the each {@link DockerRequest} and used by {@link DockerRequest#render()}.
      */
     private ByteBufAllocator allocator;
-    private Promise<Container> promise;
+    private Promise<Object> promise;
 
     /**
      * Create new RequestLinker with specified size.
@@ -120,7 +121,7 @@ public class RequestLinker {
         this.allocator = allocator;
     }
 
-    void setPromise(Promise<Container> promise) {
+    void setPromise(Promise<Object> promise) {
         this.promise = promise;
     }
 
@@ -164,13 +165,14 @@ public class RequestLinker {
         for (int i = 0; i <= tail - 1; i++) {
             currentRequest = requests[i];
             if (i == 0) {
-                currentRequest.setPromise(promise).setContainer(new Container());
+                currentRequest.setAllocator(allocator)
+                        .setPromise(promise)
+                        .setContainer(new Container());
             }
             if (i != lastIndex) {
                 nextRequest = requests[i + 1];
                 currentRequest.setNext(nextRequest);
                 logger.debug("Linked: ({}, {}) =====> ({}, {})", currentRequest, currentRequest.hashCode(), nextRequest, nextRequest.hashCode());
-                currentRequest.setAllocator(allocator);
             }
             requests[i] = currentRequest;
         }
