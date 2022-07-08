@@ -1,6 +1,5 @@
 package client.docker.request;
 
-import client.docker.dockerclient.NettyDockerClient;
 import client.docker.model.Container;
 import client.docker.request.exceptions.DuplicationException;
 import io.netty.buffer.ByteBufAllocator;
@@ -76,15 +75,6 @@ public class RequestLinker {
         requests = new DockerRequest[size];
     }
 
-    /**
-     * Set allocator.
-     *
-     * @param allocator {@link ByteBufAllocator}. Use {@link Channel#alloc()} to acquire.
-     */
-    public void setAllocator(ByteBufAllocator allocator) {
-        this.allocator = allocator;
-    }
-    public void setPromise(Promise<Container> promise) {this.promise = promise;}
 
     /**
      * Get a {@link DockerRequest} at the specified index.
@@ -122,6 +112,19 @@ public class RequestLinker {
     }
 
     /**
+     * Set allocator.
+     *
+     * @param allocator {@link ByteBufAllocator}. Use {@link Channel#alloc()} to acquire.
+     */
+    void setAllocator(ByteBufAllocator allocator) {
+        this.allocator = allocator;
+    }
+
+    void setPromise(Promise<Container> promise) {
+        this.promise = promise;
+    }
+
+    /**
      * Check if there are duplication. The "duplication" means same instances that have same hashCodes.
      *
      * @throws DuplicationException
@@ -153,27 +156,25 @@ public class RequestLinker {
      * @return
      * @throws DuplicationException
      */
-    public RequestLinker link() throws DuplicationException {
+    RequestLinker link() throws DuplicationException {
         checkDuplicates();
         final int lastIndex = tail - 1;
         DockerRequest nextRequest;
         DockerRequest currentRequest;
         for (int i = 0; i <= tail - 1; i++) {
-            currentRequest = requests[i];  /*Get current index's request;*/
+            currentRequest = requests[i];
             if (i == 0) {
-                currentRequest.setAllocator(allocator).setPromise(promise).setContainer(new Container());
+                currentRequest.setPromise(promise).setContainer(new Container());
             }
-            if (i != lastIndex) { // If current request has next;
-                nextRequest = requests[i + 1]; /* Get next index's request; */
-                currentRequest.setNext(nextRequest); /* Set next request to current request; */
-                String log = String.format("Linked: (%s, %d) =====> (%s, %d)", currentRequest, currentRequest.hashCode(), nextRequest, nextRequest.hashCode());
-                logger.debug(log);
+            if (i != lastIndex) {
+                nextRequest = requests[i + 1];
+                currentRequest.setNext(nextRequest);
+                logger.debug("Linked: ({}, {}) =====> ({}, {})", currentRequest, currentRequest.hashCode(), nextRequest, nextRequest.hashCode());
                 currentRequest.setAllocator(allocator);
             }
-            requests[i] = currentRequest; /* update request in the array*/
+            requests[i] = currentRequest;
         }
-        String log = String.format("Completed request linking: %s", Arrays.toString(requests));
-        logger.debug(log);
+        logger.debug("Completed request linking {}", Arrays.toString(requests));
         return this;
     }
 }
