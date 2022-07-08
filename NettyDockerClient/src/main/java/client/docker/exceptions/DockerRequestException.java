@@ -1,4 +1,4 @@
-package client.docker.request.exceptions;
+package client.docker.exceptions;
 
 public class DockerRequestException extends RuntimeException{
     public DockerRequestException(String message, Throwable t) {

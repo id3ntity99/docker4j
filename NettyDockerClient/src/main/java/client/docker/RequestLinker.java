@@ -1,7 +1,7 @@
-package client.docker.request;
+package client.docker;
 
 import client.docker.model.Container;
-import client.docker.request.exceptions.DuplicationException;
+import client.docker.exceptions.DuplicationException;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.util.concurrent.Promise;

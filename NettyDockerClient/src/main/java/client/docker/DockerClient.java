@@ -1,4 +1,4 @@
-package client.docker.request;
+package client.docker;
 
 import client.docker.model.Container;
 import io.netty.channel.ChannelFuture;

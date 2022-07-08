@@ -1,4 +1,4 @@
-package client.docker.request.internal.stream;
+package client.docker.internal.stream;
 
 public enum StreamType {
     STDIN("stdin"),

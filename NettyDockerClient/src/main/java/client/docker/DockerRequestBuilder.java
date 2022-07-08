@@ -1,4 +1,4 @@
-package client.docker.request;
+package client.docker;
 
 public interface DockerRequestBuilder {
     DockerRequest build();

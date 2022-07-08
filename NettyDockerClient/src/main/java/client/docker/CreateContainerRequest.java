@@ -1,9 +1,9 @@
-package client.docker.request;
+package client.docker;
 
 import client.docker.model.*;
-import client.docker.request.exceptions.DockerRequestException;
-import client.docker.request.internal.http.RequestHelper;
-import client.docker.request.internal.http.URIs;
+import client.docker.exceptions.DockerRequestException;
+import client.docker.internal.http.RequestHelper;
+import client.docker.internal.http.URIs;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelInboundHandlerAdapter;

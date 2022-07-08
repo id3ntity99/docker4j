@@ -1,4 +1,4 @@
-package client.docker.request.exceptions;
+package client.docker.exceptions;
 
 public class DuplicationException extends Exception{
     public DuplicationException(String message) {

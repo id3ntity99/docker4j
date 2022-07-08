@@ -1,7 +1,7 @@
-package client.docker.request;
+package client.docker;
 
-import client.docker.request.internal.http.URIs;
-import client.docker.request.internal.http.RequestHelper;
+import client.docker.internal.http.URIs;
+import client.docker.internal.http.RequestHelper;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.FullHttpRequest;
 

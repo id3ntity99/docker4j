@@ -1,7 +1,7 @@
-package client.docker.request;
+package client.docker;
 
 import client.docker.model.Container;
-import client.docker.request.exceptions.DockerResponseException;
+import client.docker.exceptions.DockerResponseException;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
