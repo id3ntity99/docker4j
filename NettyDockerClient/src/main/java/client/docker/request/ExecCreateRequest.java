@@ -1,11 +1,12 @@
 package client.docker.request;
 
-import client.docker.configs.exec.ExecCreateConfig;
+import client.docker.model.exec.ExecCreateConfig;
 import client.docker.request.exceptions.DockerRequestException;
-import client.docker.uris.URIs;
-import client.docker.util.RequestHelper;
+import client.docker.request.internal.http.URIs;
+import client.docker.request.internal.http.RequestHelper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.util.CharsetUtil;
@@ -36,7 +37,7 @@ public class ExecCreateRequest extends DockerRequest {
     }
 
     @Override
-    public DockerResponseHandler handler() {
+    protected ChannelInboundHandlerAdapter handler() {
         return new ExecCreateHandler(container, nextRequest, promise, allocator);
     }
 

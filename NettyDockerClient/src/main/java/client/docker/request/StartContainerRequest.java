@@ -1,7 +1,8 @@
 package client.docker.request;
 
-import client.docker.uris.URIs;
-import client.docker.util.RequestHelper;
+import client.docker.request.internal.http.URIs;
+import client.docker.request.internal.http.RequestHelper;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.FullHttpRequest;
 
 import java.net.URI;
@@ -15,12 +16,12 @@ public class StartContainerRequest extends DockerRequest {
     public FullHttpRequest render() {
         String containerId = container.getContainerId();
         URI uri = URIs.START_CONTAINER.uri(containerId);
-        logger.debug(String.format("Rendered FullHttpRequest. URL == %s", uri));
+        logger.debug("Rendered FullHttpRequest. URL == {}", uri);
         return RequestHelper.post(uri, false, null, null);
     }
 
     @Override
-    public DockerResponseHandler handler() {
+    protected ChannelInboundHandlerAdapter handler() {
         return new StartContainerHandler(container, nextRequest, promise, allocator);
     }
 

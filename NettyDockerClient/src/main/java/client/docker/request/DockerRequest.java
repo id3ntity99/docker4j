@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
@@ -65,7 +66,7 @@ public abstract class DockerRequest {
         return this;
     }
 
-    public Promise<Container> getPromise() {
+    protected Promise<Container> getPromise() {
         return promise;
     }
 
@@ -76,5 +77,13 @@ public abstract class DockerRequest {
 
     public abstract FullHttpRequest render() throws Exception;
 
-    public abstract DockerResponseHandler handler();
+    /**
+     * Instantiates internal-use only channel inbound handler.
+     * the reason of invoking this method is to create new instance of the subclasses of {@link ChannelInboundHandlerAdapter},
+     * such as {@link io.netty.channel.SimpleChannelInboundHandler} and its subclass {@link DockerResponseHandler}.
+     * For the most of the time, the return value of this method is used for the simplest task:
+     * <strong>add the handler to the {@link io.netty.channel.ChannelPipeline}</strong>
+     * @return
+     */
+    protected abstract ChannelInboundHandlerAdapter handler();
 }
