@@ -5,10 +5,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
@@ -51,14 +48,13 @@ public abstract class DockerResponseHandler extends SimpleChannelInboundHandler<
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
             if (future.isSuccess()) {
-                logger.debug(String.format("Successfully sent %s", nextRequest.getClass().getSimpleName()));
-                DockerResponseHandler nextHandler = nextRequest.handler();
+                logger.debug("Successfully sent {}", nextRequest.getClass().getSimpleName());
+                ChannelInboundHandlerAdapter nextHandler = nextRequest.handler();
                 ctx.pipeline().replace(currentHandler.getClass(), nextHandler.toString(), nextHandler);
             } else {
                 String errMsg = String.format("Exception raised while sending next %s", nextRequest.getClass().getSimpleName());
                 logger.error(errMsg, future.cause());
             }
-
         }
     }
 }
