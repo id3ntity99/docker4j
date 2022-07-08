@@ -13,7 +13,7 @@ import io.netty.util.CharsetUtil;
 
 import java.net.URI;
 
-final class ExecStartRequest extends DockerRequest {
+public class ExecStartRequest extends DockerRequest {
     private final Channel input;
     private final ExecStartConfig config;
 

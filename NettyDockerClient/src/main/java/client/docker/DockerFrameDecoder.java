@@ -8,9 +8,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 
-//TODO FrameDecoder 구현하기.
-//  1. Frame Header를 수신받으면 header를 제거.
-
 /**
  * A subclass of the {@link ByteToMessageDecoder} to decode frames of the vnd.docker.raw-stream.
  *

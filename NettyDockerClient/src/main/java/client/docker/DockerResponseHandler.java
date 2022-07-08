@@ -15,11 +15,11 @@ public abstract class DockerResponseHandler extends SimpleChannelInboundHandler<
     protected static final ObjectMapper mapper = new ObjectMapper().setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
     protected DockerRequest nextRequest;
     protected Container container;
-    protected Promise<Container> promise;
+    protected Promise<Object> promise;
     protected ByteBufAllocator allocator;
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    DockerResponseHandler(Container container, DockerRequest nextRequest, Promise<Container> promise, ByteBufAllocator allocator) {
+    DockerResponseHandler(Container container, DockerRequest nextRequest, Promise<Object> promise, ByteBufAllocator allocator) {
         this.container = container;
         this.nextRequest = nextRequest;
         this.promise = promise;

@@ -1,7 +1,7 @@
 package client.docker;
 
-import client.docker.model.Container;
 import client.docker.exceptions.DockerResponseException;
+import client.docker.model.Container;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -11,7 +11,7 @@ import io.netty.util.concurrent.Promise;
 
 final class CreateContainerHandler extends DockerResponseHandler {
     public CreateContainerHandler(Container container, DockerRequest nextRequest,
-                                  Promise<Container> promise, ByteBufAllocator allocator) {
+                                  Promise<Object> promise, ByteBufAllocator allocator) {
         super(container, nextRequest, promise, allocator);
     }
 

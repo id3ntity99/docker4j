@@ -20,12 +20,12 @@ public abstract class DockerRequest {
     protected DockerRequest nextRequest = null;
     protected Container container;
     protected ByteBufAllocator allocator = new PooledByteBufAllocator();
-    protected Promise<Container> promise;
+    protected Promise<Object> promise;
 
     protected DockerRequest(DockerRequestBuilder builder) {
     }
 
-    protected DockerRequest setPromise(Promise<Container> promise) {
+    protected DockerRequest setPromise(Promise<Object> promise) {
         this.promise = promise;
         return this;
     }
@@ -66,7 +66,7 @@ public abstract class DockerRequest {
         return this;
     }
 
-    protected Promise<Container> getPromise() {
+    protected Promise<Object> getPromise() {
         return promise;
     }
 
@@ -83,6 +83,7 @@ public abstract class DockerRequest {
      * such as {@link io.netty.channel.SimpleChannelInboundHandler} and its subclass {@link DockerResponseHandler}.
      * For the most of the time, the return value of this method is used for the simplest task:
      * <strong>add the handler to the {@link io.netty.channel.ChannelPipeline}</strong>
+     *
      * @return
      */
     protected abstract ChannelInboundHandlerAdapter handler();

@@ -11,7 +11,7 @@ import io.netty.util.concurrent.Promise;
 
 final class ExecCreateHandler extends DockerResponseHandler {
     public ExecCreateHandler(Container container, DockerRequest nextRequest
-            , Promise<Container> promise, ByteBufAllocator allocator) {
+            , Promise<Object> promise, ByteBufAllocator allocator) {
         super(container, nextRequest, promise, allocator);
     }
 
