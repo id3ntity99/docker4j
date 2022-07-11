@@ -1,13 +1,17 @@
 package client.docker;
 
+import client.docker.exceptions.DuplicationException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.Promise;
 
-public interface DockerClient {
+import java.io.Closeable;
+
+public interface DockerClient extends Closeable {
     ChannelFuture connect();
 
-    Promise<Object> request() throws Exception;
+    Promise<DockerResponseNode> request() throws DuplicationException, JsonProcessingException;
 
     /**
      * Use this method if, and only if you added {@link ExecStartRequest} to the {@link RequestLinker} to interact with the created Docker container.
@@ -16,7 +20,7 @@ public interface DockerClient {
      *
      * @throws Exception
      */
-    void interact() throws Exception;
+    void interact() throws DuplicationException, JsonProcessingException;
 
     /**
      * Write a series of bytes into the interactive channel, which was established by invoking {@link #interact()} method.
