@@ -1,10 +1,6 @@
 package client.docker;
 
-import client.docker.model.Container;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import client.docker.exceptions.DockerRequestException;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -14,31 +10,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class DockerRequest {
-    protected static final ObjectMapper mapper = new ObjectMapper().setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-    protected static final ObjectWriter writer = mapper.writer().withDefaultPrettyPrinter();
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected DockerRequest nextRequest = null;
-    protected Container container;
     protected ByteBufAllocator allocator = new PooledByteBufAllocator();
-    protected Promise<Object> promise;
+    protected Promise<DockerResponseNode> promise;
+    protected DockerResponseNode node;
 
     protected DockerRequest(DockerRequestBuilder builder) {
     }
 
-    protected DockerRequest setPromise(Promise<Object> promise) {
+    protected DockerRequest setPromise(Promise<DockerResponseNode> promise) {
         this.promise = promise;
-        return this;
-    }
-
-    /**
-     * Internal use only. Mostly, methods starting with "set" word are used by {@link RequestLinker}.
-     * So, the methods are not exposed to the user.
-     *
-     * @param container
-     * @return
-     */
-    protected DockerRequest setContainer(Container container) {
-        this.container = container;
         return this;
     }
 
@@ -66,7 +48,12 @@ public abstract class DockerRequest {
         return this;
     }
 
-    protected Promise<Object> getPromise() {
+    protected DockerRequest setNode(DockerResponseNode node) {
+        this.node = node;
+        return this;
+    }
+
+    protected Promise<DockerResponseNode> getPromise() {
         return promise;
     }
 
@@ -75,7 +62,7 @@ public abstract class DockerRequest {
         return this.getClass().getSimpleName();
     }
 
-    public abstract FullHttpRequest render() throws Exception;
+    public abstract FullHttpRequest render() throws DockerRequestException;
 
     /**
      * Instantiates internal-use only channel inbound handler.
