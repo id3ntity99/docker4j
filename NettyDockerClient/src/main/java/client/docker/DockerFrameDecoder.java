@@ -34,11 +34,6 @@ public class DockerFrameDecoder extends SimpleChannelInboundHandler<ByteBuf> {
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) {
-        System.out.println("DockerFrameHandler Activated");
-    }
-
-    @Override
     public void channelRead0(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
         StreamType type = checkStreamType(in.getByte(0));
         if (!type.equals(StreamType.RAW)) {
