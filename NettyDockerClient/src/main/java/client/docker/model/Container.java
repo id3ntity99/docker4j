@@ -1,5 +1,9 @@
 package client.docker.model;
 
+/**
+ * use {@link client.docker.DockerResponseNode} instead.
+ */
+@Deprecated
 public class Container {
     private Config config;
     private String containerId;
