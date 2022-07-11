@@ -1,6 +1,5 @@
 package client.docker;
 
-import client.docker.model.Container;
 import client.docker.exceptions.DuplicationException;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
@@ -41,7 +40,7 @@ import java.util.Arrays;
  * B1.setNext(A2)<br/>
  * A2.setNext(B2)<br/>
  * 위에서 언급했듯이 A1과 A2는 같은 인스턴스이므로 <code>A1.nextRequest == B1</code>, <code>B1.nextRequest == A1</code>이 된다.
- * 이 상태에서 {@link NettyDockerClient#request()}를 호출하면:<br/>
+ * 이 상태에서 {@link DefaultDockerClient#request()}를 호출하면:<br/>
  * (1) A1의 FullHttpRequest가 전송되고 응답을 받은 A1의 핸들러는 다음 요청이 있는지를 살핀다.
  * A1의 다음 요청은 B1이므로 B1의 FullHttpRequest를 렌더링해 전송하고 B1의 핸들러를 생성한다.<br/>
  * (2) B1 요청에 대한 응답을 받은 B1 핸들러는 마찬가지로 다음 요청이 있는지 살핀다. 앞서 말했듯이, B1.nextRequest == A2 == A1이므로 다시 (1)번부터 반복되므로
