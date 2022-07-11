@@ -1,8 +1,10 @@
 package client.docker;
 
+import client.docker.exceptions.DockerRequestException;
 import client.docker.model.exec.ExecStartConfig;
 import client.docker.internal.http.URIs;
 import client.docker.internal.http.RequestHelper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -24,14 +26,19 @@ public class ExecStartRequest extends DockerRequest {
     }
 
     @Override
-    public FullHttpRequest render() throws Exception {
-        String execId = container.getExecId();
-        URI uri = URIs.EXEC_START.uri(execId);
-        byte[] body = writer.writeValueAsString(config).getBytes(CharsetUtil.UTF_8);
-        ByteBuf bodyBuffer = allocator.heapBuffer().writeBytes(body);
-        FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
-        req.headers().set(HttpHeaderNames.UPGRADE, "tcp");
-        return req;
+    public FullHttpRequest render() throws DockerRequestException {
+        try {
+            String execId = node.find("_exec_id");
+            URI uri = URIs.EXEC_START.uri(execId);
+            byte[] body = JacksonHelper.writeValueAsString(config).getBytes(CharsetUtil.UTF_8);
+            ByteBuf bodyBuffer = allocator.heapBuffer().writeBytes(body);
+            FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
+            req.headers().set(HttpHeaderNames.UPGRADE, "tcp");
+            return req;
+        } catch(JsonProcessingException e) {
+            String errMsg = String.format("Exception raised while build the %s command", this.getClass().getSimpleName());
+            throw new DockerRequestException(errMsg, e);
+        }
     }
 
     @Override

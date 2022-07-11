@@ -22,10 +22,10 @@ public class ExecCreateRequest extends DockerRequest {
     }
 
     @Override
-    public FullHttpRequest render() throws Exception {
+    public FullHttpRequest render() {
         try {
-            byte[] body = writer.writeValueAsString(config).getBytes(CharsetUtil.UTF_8);
-            String containerId = container.getContainerId();
+            byte[] body = JacksonHelper.writeValueAsString(config).getBytes(CharsetUtil.UTF_8);
+            String containerId = node.find("_container_id");
             URI uri = URIs.EXEC_CREATE.uri(containerId);
             ByteBuf bodyBuffer = allocator.heapBuffer().writeBytes(body);
             logger.debug("Rendered FullHttpRequest. URL == {}", uri);
@@ -38,7 +38,10 @@ public class ExecCreateRequest extends DockerRequest {
 
     @Override
     protected ChannelInboundHandlerAdapter handler() {
-        return new ExecCreateHandler(container, nextRequest, promise, allocator);
+        return new ExecCreateHandler().setNextRequest(nextRequest)
+                .setNode(node)
+                .setAllocator(allocator)
+                .setPromise(promise);
     }
 
     public static class Builder implements DockerRequestBuilder {

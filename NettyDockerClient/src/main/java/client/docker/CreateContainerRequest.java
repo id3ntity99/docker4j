@@ -1,9 +1,9 @@
 package client.docker;
 
-import client.docker.model.*;
 import client.docker.exceptions.DockerRequestException;
 import client.docker.internal.http.RequestHelper;
 import client.docker.internal.http.URIs;
+import client.docker.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -25,12 +25,12 @@ public class CreateContainerRequest extends DockerRequest {
     @Override
     public FullHttpRequest render() {
         try {
-            byte[] body = writer.writeValueAsString(config).getBytes(CharsetUtil.UTF_8);
+            byte[] body = JacksonHelper.writeValueAsString(config).getBytes(CharsetUtil.UTF_8);
             URI uri = URIs.CREATE_CONTAINER.uri();
             ByteBuf bodyBuffer = allocator.heapBuffer().writeBytes(body);
             logger.debug("Rendered FullHttpRequest. URL == {}", uri);
             return RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
-        } catch (JsonProcessingException e) {
+        } catch(JsonProcessingException e) {
             String errMsg = String.format("Exception raised while build the %s command", this.getClass().getSimpleName());
             throw new DockerRequestException(errMsg, e);
         }
@@ -38,7 +38,10 @@ public class CreateContainerRequest extends DockerRequest {
 
     @Override
     protected ChannelInboundHandlerAdapter handler() {
-        return new CreateContainerHandler(container, nextRequest, promise, allocator);
+        return new CreateContainerHandler().setNextRequest(nextRequest)
+                .setNode(node)
+                .setAllocator(allocator)
+                .setPromise(promise);
     }
 
     public static class Builder implements DockerRequestBuilder {
