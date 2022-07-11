@@ -1,6 +1,5 @@
 package client.docker;
 
-import client.docker.model.Container;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,22 +13,35 @@ import org.slf4j.LoggerFactory;
 public abstract class DockerResponseHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
     protected static final ObjectMapper mapper = new ObjectMapper().setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
     protected DockerRequest nextRequest;
-    protected Container container;
-    protected Promise<Object> promise;
+    protected DockerResponseNode node;
+    protected Promise<DockerResponseNode> promise;
     protected ByteBufAllocator allocator;
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    DockerResponseHandler(Container container, DockerRequest nextRequest, Promise<Object> promise, ByteBufAllocator allocator) {
-        this.container = container;
-        this.nextRequest = nextRequest;
+    protected DockerResponseHandler setPromise(Promise<DockerResponseNode> promise) {
         this.promise = promise;
+        return this;
+    }
+
+    protected DockerResponseHandler setNextRequest(DockerRequest nextRequest) {
+        this.nextRequest = nextRequest;
+        return this;
+    }
+
+    protected DockerResponseHandler setAllocator(ByteBufAllocator allocator) {
         this.allocator = allocator;
+        return this;
+    }
+
+    protected DockerResponseHandler setNode(DockerResponseNode node) {
+        this.node = node;
+        return this;
     }
 
     protected void handOver() {
-        nextRequest.setContainer(container)
-                .setPromise(promise)
-                .setAllocator(allocator);
+        nextRequest.setPromise(promise)
+                .setAllocator(allocator)
+                .setNode(node);
     }
 
     protected static class NextRequestListener implements ChannelFutureListener {
