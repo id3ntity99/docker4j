@@ -59,13 +59,14 @@ public class RequestLinker {
     /**
      * An index of the last {@link DockerRequest}
      */
+    private int size;
     private int tail = 0;
     /**
      * A {@link ByteBufAllocator} field, which is initialized by {@link RequestLinker#setAllocator(ByteBufAllocator)}
      * This allocator will be passed to the each {@link DockerRequest} and used by {@link DockerRequest#render()}.
      */
     private ByteBufAllocator allocator;
-    private Promise<Object> promise;
+    private Promise<DockerResponseNode> promise;
 
     /**
      * Create new RequestLinker with specified size.
@@ -73,6 +74,7 @@ public class RequestLinker {
      * @param size A size of the internal array of {@link DockerRequest}.
      */
     public RequestLinker(int size) {
+        this.size = size;
         requests = new DockerRequest[size];
     }
 
@@ -121,7 +123,7 @@ public class RequestLinker {
         this.allocator = allocator;
     }
 
-    void setPromise(Promise<Object> promise) {
+    void setPromise(Promise<DockerResponseNode> promise) {
         this.promise = promise;
     }
 
@@ -166,8 +168,8 @@ public class RequestLinker {
             currentRequest = requests[i];
             if (i == 0) {
                 currentRequest.setAllocator(allocator)
-                        .setPromise(promise)
-                        .setContainer(new Container());
+                        .setNode(new DockerResponseNode())
+                        .setPromise(promise);
             }
             if (i != lastIndex) {
                 nextRequest = requests[i + 1];
