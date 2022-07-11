@@ -12,35 +12,34 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.util.concurrent.Promise;
-import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
-public class NettyDockerClient implements DockerClient {
+public class DefaultDockerClient implements DockerClient {
     private EventLoopGroup eventLoopGroup;
     private InetSocketAddress dockerAddress;
     private Channel outboundChannel;
     private Class<? extends Channel> outChannelClass;
     private RequestLinker linker;
 
-    public NettyDockerClient withEventLoopGroup(EventLoopGroup eventLoopGroup) {
+    public DefaultDockerClient withEventLoopGroup(EventLoopGroup eventLoopGroup) {
         this.eventLoopGroup = eventLoopGroup;
         return this;
     }
 
-    public NettyDockerClient withOutChannelClass(Class<? extends Channel> outChannelClass) {
+    public DefaultDockerClient withOutChannelClass(Class<? extends Channel> outChannelClass) {
         this.outChannelClass = outChannelClass;
         return this;
     }
 
-    public NettyDockerClient withAddress(String host, int port) throws UnknownHostException {
+    public DefaultDockerClient withAddress(String host, int port) throws UnknownHostException {
         this.dockerAddress = new InetSocketAddress(InetAddress.getByName(host), port);
         return this;
     }
 
-    public NettyDockerClient withLinker(RequestLinker linker) {
+    public DefaultDockerClient withLinker(RequestLinker linker) {
         this.linker = linker;
         return this;
     }
