@@ -9,14 +9,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class RequestTest {
     @Test
     void createContainer_successful() throws Exception {
-        DockerRequest request = new CreateContainerRequest.Builder().withImage("alpine").build();
-        final RequestLinker linker = new RequestLinker(1);
+        DockerHandler request = new CreateContainerHandler.Builder().withImage("alpine").build();
         final DefaultDockerClient client = new DefaultDockerClient();
-        linker.add(request);
         client.withAddress("localhost", 2375)
+                .add(request)
                 .withEventLoopGroup(new NioEventLoopGroup())
                 .withOutChannelClass(NioSocketChannel.class)
-                .withLinker(linker)
                 .connect()
                 .sync() // Wait until the connection established.
                 .addListener((ChannelFutureListener) future -> assertTrue(future.isSuccess()));
@@ -30,13 +28,11 @@ class RequestTest {
 
     @Test
     void createContainer_unsuccessful() throws Exception {
-        DockerRequest request = new CreateContainerRequest.Builder().withImage("#(!)*").build();
-        final RequestLinker linker = new RequestLinker(1);
+        DockerHandler request = new CreateContainerHandler.Builder().withImage("#(!)*").build();
         final DefaultDockerClient client = new DefaultDockerClient();
-        linker.add(request);
 
         client.withAddress("localhost", 2375)
-                .withLinker(linker)
+                .add(request)
                 .withOutChannelClass(NioSocketChannel.class)
                 .withEventLoopGroup(new NioEventLoopGroup())
                 .connect()
@@ -50,11 +46,11 @@ class RequestTest {
 
     @Test
     void startContainer_successful() throws Exception {
-        DockerRequest createRequest = new CreateContainerRequest.Builder().withImage("alpine").build();
-        DockerRequest startRequest = new StartContainerRequest.Builder().build();
-        RequestLinker linker = new RequestLinker(2).add(createRequest).add(startRequest);
+        DockerHandler createRequest = new CreateContainerHandler.Builder().withImage("alpine").build();
+        DockerHandler startRequest = new StartContainerHandler.Builder().build();
         DefaultDockerClient client = new DefaultDockerClient().withAddress("localhost", 2375)
-                .withLinker(linker)
+                .add(createRequest)
+                .add(startRequest)
                 .withOutChannelClass(NioSocketChannel.class)
                 .withEventLoopGroup(new NioEventLoopGroup());
         client.connect().sync().addListener((ChannelFutureListener) future -> assertTrue(future.isSuccess()));
@@ -65,14 +61,13 @@ class RequestTest {
 
     @Test
     void startContainer_unsuccessful() throws Exception {
-        DockerRequest createRequest = new CreateContainerRequest.Builder().withImage("alpine").withOpenStdin(true).build();
-        DockerRequest startRequest1 = new StartContainerRequest.Builder().build();
-        DockerRequest startRequest2 = new StartContainerRequest.Builder().build();
-        RequestLinker linker = new RequestLinker(3).add(createRequest)
-                .add(startRequest1)
-                .add(startRequest2);
+        DockerHandler createRequest = new CreateContainerHandler.Builder().withImage("alpine").withOpenStdin(true).build();
+        DockerHandler startRequest1 = new StartContainerHandler.Builder().build();
+        DockerHandler startRequest2 = new StartContainerHandler.Builder().build();
         DefaultDockerClient client = new DefaultDockerClient().withAddress("localhost", 2375)
-                .withLinker(linker)
+                .add(createRequest)
+                .add(startRequest1)
+                .add(startRequest2)
                 .withOutChannelClass(NioSocketChannel.class)
                 .withEventLoopGroup(new NioEventLoopGroup());
         client.connect().sync().addListener((ChannelFutureListener) future -> assertTrue(future.isSuccess()));
