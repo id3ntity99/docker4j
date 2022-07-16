@@ -1,25 +1,23 @@
 package client.docker;
 
 import client.docker.exceptions.DockerRequestException;
-import client.docker.model.exec.ExecStartConfig;
-import client.docker.internal.http.URIs;
 import client.docker.internal.http.RequestHelper;
+import client.docker.internal.http.URIs;
+import client.docker.model.exec.ExecStartConfig;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
 
 import java.net.URI;
 
-public class ExecStartRequest extends DockerRequest {
+public class ExecStartRequestHandler extends DockerRequestHandler {
     private final Channel input;
     private final ExecStartConfig config;
 
-    public ExecStartRequest(Builder builder) {
+    public ExecStartRequestHandler(Builder builder) {
         super(builder);
         input = builder.input;
         config = builder.config;
@@ -35,15 +33,23 @@ public class ExecStartRequest extends DockerRequest {
             FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
             req.headers().set(HttpHeaderNames.UPGRADE, "tcp");
             return req;
-        } catch(JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             String errMsg = String.format("Exception raised while build the %s command", this.getClass().getSimpleName());
             throw new DockerRequestException(errMsg, e);
         }
     }
 
     @Override
-    protected ChannelInboundHandlerAdapter handler() {
-        return new DockerFrameDecoder(input);
+    public void channelRead0(ChannelHandlerContext ctx, FullHttpResponse res) throws Exception {
+        if (res.status().code() == 101) {
+            ctx.pipeline().remove(HttpClientCodec.class);
+            ctx.pipeline().remove(HttpObjectAggregator.class);
+            ctx.pipeline().remove(this);
+            ctx.pipeline().addLast(new DockerFrameDecoder(input));
+            ctx.fireChannelActive();
+        } else {
+            System.out.println("Something went wrong");
+        }
     }
 
     public static class Builder implements DockerRequestBuilder {
@@ -66,8 +72,8 @@ public class ExecStartRequest extends DockerRequest {
         }
 
         @Override
-        public DockerRequest build() {
-            return new ExecStartRequest(this);
+        public DockerRequestHandler build() {
+            return new ExecStartRequestHandler(this);
         }
     }
 }

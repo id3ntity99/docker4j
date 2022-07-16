@@ -1,12 +1,28 @@
 package client.docker;
 
 import client.docker.exceptions.DockerResponseException;
+import client.docker.internal.http.RequestHelper;
+import client.docker.internal.http.URIs;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.util.CharsetUtil;
 
-final class StartContainerHandler extends DockerResponseHandler {
+import java.net.URI;
+
+public class StartContainerRequestHandler extends DockerRequestHandler {
+    public StartContainerRequestHandler(Builder builder) {
+        super(builder);
+    }
+
+    @Override
+    public FullHttpRequest render() {
+        String id = node.find("_container_id");
+        URI uri = URIs.START_CONTAINER.uri(id);
+        logger.debug("Rendered FullHttpRequest. URL == {}", uri);
+        return RequestHelper.post(uri, false, null, null);
+    }
+
     private void parseResponseBody(String json) {
         node.add("start_container_response", json);
     }
@@ -16,7 +32,7 @@ final class StartContainerHandler extends DockerResponseHandler {
             logger.debug("Next request detected: {}", nextRequest.getClass().getSimpleName());
             handOver();
             FullHttpRequest req = nextRequest.render();
-            ctx.channel().writeAndFlush(req).addListener(new NextRequestListener(logger, ctx, this, nextRequest));
+            ctx.channel().writeAndFlush(req).addListener(new NextRequestListener(ctx, this, nextRequest));
         } else {
             logger.info("There are no more requests... removing {}", this.getClass().getSimpleName());
             promise.setSuccess(node);
@@ -36,6 +52,13 @@ final class StartContainerHandler extends DockerResponseHandler {
             node.add("_error", errMessage);
             promise.setSuccess(node);
             throw new DockerResponseException(errMessage);
+        }
+    }
+
+    public static class Builder implements DockerRequestBuilder {
+        @Override
+        public DockerRequestHandler build() {
+            return new StartContainerRequestHandler(this);
         }
     }
 }

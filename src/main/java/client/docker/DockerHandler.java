@@ -3,23 +3,24 @@ package client.docker;
 import client.docker.exceptions.DockerRequestException;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class DockerRequest {
+public abstract class DockerRequestHandler extends SimpleChannelInboundHandler<FullHttpResponse>{
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
-    protected DockerRequest nextRequest = null;
+    protected DockerRequestHandler nextRequest = null;
     protected ByteBufAllocator allocator = new PooledByteBufAllocator();
-    protected Promise<DockerResponseNode> promise;
-    protected DockerResponseNode node;
+    protected Promise<DockerResponseNode> promise = null;
+    protected DockerResponseNode node = null;
 
-    protected DockerRequest(DockerRequestBuilder builder) {
+    protected DockerRequestHandler(DockerRequestBuilder builder) {
     }
 
-    protected DockerRequest setPromise(Promise<DockerResponseNode> promise) {
+    protected DockerRequestHandler setPromise(Promise<DockerResponseNode> promise) {
         this.promise = promise;
         return this;
     }
@@ -31,7 +32,7 @@ public abstract class DockerRequest {
      * @param nextRequest
      * @return
      */
-    protected DockerRequest setNext(DockerRequest nextRequest) {
+    protected DockerRequestHandler setNext(DockerRequestHandler nextRequest) {
         this.nextRequest = nextRequest;
         return this;
     }
@@ -43,18 +44,20 @@ public abstract class DockerRequest {
      * @param allocator
      * @return
      */
-    protected DockerRequest setAllocator(ByteBufAllocator allocator) {
+    protected DockerRequestHandler setAllocator(ByteBufAllocator allocator) {
         this.allocator = allocator;
         return this;
     }
 
-    protected DockerRequest setNode(DockerResponseNode node) {
+    protected DockerRequestHandler setNode(DockerResponseNode node) {
         this.node = node;
         return this;
     }
 
-    protected Promise<DockerResponseNode> getPromise() {
-        return promise;
+    protected void handOver() {
+        nextRequest.setPromise(promise)
+                .setAllocator(allocator)
+                .setNode(node);
     }
 
     @Override
@@ -63,15 +66,4 @@ public abstract class DockerRequest {
     }
 
     public abstract FullHttpRequest render() throws DockerRequestException;
-
-    /**
-     * Instantiates internal-use only channel inbound handler.
-     * the reason of invoking this method is to create new instance of the subclasses of {@link ChannelInboundHandlerAdapter},
-     * such as {@link io.netty.channel.SimpleChannelInboundHandler} and its subclass {@link DockerResponseHandler}.
-     * For the most of the time, the return value of this method is used for the simplest task:
-     * <strong>add the handler to the {@link io.netty.channel.ChannelPipeline}</strong>
-     *
-     * @return
-     */
-    protected abstract ChannelInboundHandlerAdapter handler();
 }
