@@ -3,6 +3,7 @@ package client.docker;
 import client.docker.exceptions.DuplicationException;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -12,35 +13,96 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.util.concurrent.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DefaultDockerClient implements DockerClient {
+    private static final Logger logger = LoggerFactory.getLogger(DefaultDockerClient.class);
     private EventLoopGroup eventLoopGroup;
     private InetSocketAddress dockerAddress;
     private Channel outboundChannel;
     private Class<? extends Channel> outChannelClass;
-    private RequestLinker linker;
+    private DockerResponseNode node = new DockerResponseNode();
+    private final List<DockerHandler> handlers = new ArrayList<>();
 
+    private void checkDuplicates() throws DuplicationException {
+        DockerHandler requestToCheck;
+        int hashToCheck;
+        for (int i = 0; i < handlers.size(); i++) {
+            requestToCheck = handlers.get(i);
+            hashToCheck = requestToCheck.hashCode();
+            for (int j = 0; j < handlers.size(); j++) {
+                if (j == i) {
+                    continue;
+                }
+                if (hashToCheck == handlers.get(j).hashCode()) {
+                    String err = String.format("Duplication detected: %s %s", requestToCheck.getClass(), handlers.get(j));
+                    String message = "You need to create new instance of DockerRequest, even for the same operation." +
+                            "Do not reuse the instances!";
+                    throw new DuplicationException(err + message);
+                }
+            }
+        }
+        logger.debug("There are no duplications");
+    }
+
+    private void link(ByteBufAllocator allocator, DockerResponseNode node,
+                      Promise<DockerResponseNode> promise) throws DuplicationException {
+        checkDuplicates();
+        final int lastIndex = handlers.size() - 1;
+        DockerHandler nextRequest;
+        DockerHandler currentRequest;
+        for (int i = 0; i <= handlers.size() - 1; i++) {
+            currentRequest = handlers.get(i);
+            if (i == 0) {
+                currentRequest.setAllocator(allocator)
+                        .setNode(node)
+                        .setPromise(promise);
+            }
+            if (i != lastIndex) {
+                nextRequest = handlers.get(i + 1);
+                currentRequest.setNext(nextRequest);
+                logger.debug("Linked: ({}, {}) =====> ({}, {})", currentRequest, currentRequest.hashCode(), nextRequest, nextRequest.hashCode());
+            }
+            handlers.set(i, currentRequest);
+        }
+        logger.debug("Completed request linking {}", handlers);
+    }
+
+
+    @Override
+    public DefaultDockerClient add(DockerHandler handler) {
+        handlers.add(handler);
+        return this;
+    }
+
+    @Override
+    public DefaultDockerClient withPrevNode(DockerResponseNode previousNode) {
+        node = previousNode;
+        return this;
+    }
+
+    @Override
     public DefaultDockerClient withEventLoopGroup(EventLoopGroup eventLoopGroup) {
         this.eventLoopGroup = eventLoopGroup;
         return this;
     }
 
+    @Override
     public DefaultDockerClient withOutChannelClass(Class<? extends Channel> outChannelClass) {
         this.outChannelClass = outChannelClass;
         return this;
     }
 
+    @Override
     public DefaultDockerClient withAddress(String host, int port) throws UnknownHostException {
         this.dockerAddress = new InetSocketAddress(InetAddress.getByName(host), port);
-        return this;
-    }
-
-    public DefaultDockerClient withLinker(RequestLinker linker) {
-        this.linker = linker;
         return this;
     }
 
@@ -54,29 +116,16 @@ public class DefaultDockerClient implements DockerClient {
         return future;
     }
 
-    private DockerRequest configureLinker() throws DuplicationException {
-        Promise<DockerResponseNode> promise1 = outboundChannel.eventLoop().newPromise();
-        linker.setAllocator(outboundChannel.alloc());
-        linker.setPromise(promise1);
-        return linker.link().get(0);
-    }
-
-    public Promise<DockerResponseNode> request() throws DuplicationException {
-        DockerRequest firstRequest = configureLinker();
-        outboundChannel.pipeline().addLast(firstRequest.handler());
-        FullHttpRequest request = firstRequest.render();
-        outboundChannel.writeAndFlush(request);
-        return firstRequest.getPromise();
-    }
-
-
     @Override
-    public void interact() throws DuplicationException {
-        DockerRequest firstRequest = configureLinker();
-        outboundChannel.pipeline().addLast(firstRequest.handler());
-        FullHttpRequest request = firstRequest.render();
-        outboundChannel.pipeline().addLast(new TCPUpgradeHandler());
+    public Promise<DockerResponseNode> request() throws DuplicationException {
+        Promise<DockerResponseNode> resultPromise = outboundChannel.eventLoop().newPromise();
+        link(outboundChannel.alloc(), node, resultPromise);
+        DockerHandler firstHandler = handlers.get(0);
+        outboundChannel.pipeline().addLast(firstHandler);
+        FullHttpRequest request = firstHandler.render();
         outboundChannel.writeAndFlush(request);
+        handlers.clear();
+        return resultPromise;
     }
 
     @Override
