@@ -16,10 +16,10 @@ import io.netty.util.CharsetUtil;
 
 import java.net.URI;
 
-public class ExecCreateRequestHandler extends DockerRequestHandler {
+public class ExecCreateHandler extends DockerHandler {
     private final ExecCreateConfig config;
 
-    public ExecCreateRequestHandler(Builder builder) {
+    public ExecCreateHandler(Builder builder) {
         super(builder);
         this.config = builder.config;
     }
@@ -128,8 +128,8 @@ public class ExecCreateRequestHandler extends DockerRequestHandler {
         }
 
         @Override
-        public ExecCreateRequestHandler build() {
-            return new ExecCreateRequestHandler(this);
+        public ExecCreateHandler build() {
+            return new ExecCreateHandler(this);
         }
     }
 }

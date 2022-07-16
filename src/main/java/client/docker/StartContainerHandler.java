@@ -10,8 +10,8 @@ import io.netty.util.CharsetUtil;
 
 import java.net.URI;
 
-public class StartContainerRequestHandler extends DockerRequestHandler {
-    public StartContainerRequestHandler(Builder builder) {
+public class StartContainerHandler extends DockerHandler {
+    public StartContainerHandler(Builder builder) {
         super(builder);
     }
 
@@ -57,8 +57,8 @@ public class StartContainerRequestHandler extends DockerRequestHandler {
 
     public static class Builder implements DockerRequestBuilder {
         @Override
-        public DockerRequestHandler build() {
-            return new StartContainerRequestHandler(this);
+        public DockerHandler build() {
+            return new StartContainerHandler(this);
         }
     }
 }

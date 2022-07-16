@@ -13,11 +13,11 @@ import io.netty.util.CharsetUtil;
 
 import java.net.URI;
 
-public class ExecStartRequestHandler extends DockerRequestHandler {
+public class ExecStartHandler extends DockerHandler {
     private final Channel input;
     private final ExecStartConfig config;
 
-    public ExecStartRequestHandler(Builder builder) {
+    public ExecStartHandler(Builder builder) {
         super(builder);
         input = builder.input;
         config = builder.config;
@@ -72,8 +72,8 @@ public class ExecStartRequestHandler extends DockerRequestHandler {
         }
 
         @Override
-        public DockerRequestHandler build() {
-            return new ExecStartRequestHandler(this);
+        public DockerHandler build() {
+            return new ExecStartHandler(this);
         }
     }
 }

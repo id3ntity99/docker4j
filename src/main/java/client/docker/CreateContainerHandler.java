@@ -17,10 +17,10 @@ import io.netty.util.CharsetUtil;
 import java.net.URI;
 import java.util.Map;
 
-public class CreateContainerRequestHandler extends DockerRequestHandler {
+public class CreateContainerHandler extends DockerHandler {
     private final Config config;
 
-    public CreateContainerRequestHandler(Builder builder) {
+    public CreateContainerHandler(Builder builder) {
         super(builder);
         this.config = builder.config;
     }
@@ -214,8 +214,8 @@ public class CreateContainerRequestHandler extends DockerRequestHandler {
         }
 
         @Override
-        public DockerRequestHandler build() {
-            return new CreateContainerRequestHandler(this);
+        public DockerHandler build() {
+            return new CreateContainerHandler(this);
         }
     }
 }
