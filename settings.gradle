@@ -1,1 +1,4 @@
 rootProject.name = "docker4j"
+include 'docker4j-core'
+include 'docker4j-spring'
+

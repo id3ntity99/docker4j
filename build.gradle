@@ -7,14 +7,8 @@ jacoco {
     toolVersion = '0.8.8'
 }
 
-jacocoTestReport {
-    dependsOn test
-    reports {
-        html.enabled true
-    }
-}
-
 jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
     violationRules {
         rule {
             element = 'METHOD'
@@ -27,8 +21,17 @@ jacocoTestCoverageVerification {
     }
 }
 
-group 'com.example'
-version '1.0-SNAPSHOT'
+jacocoTestReport {
+    dependsOn test
+    reports {
+        html.enabled true
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}
+
+
+group 'com.github.docker4j'
+version '1.0'
 
 repositories {
     mavenCentral()
@@ -45,22 +48,45 @@ tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
-dependencies {
-
-    implementation 'io.netty:netty-all:4.1.77.Final'
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.13.3'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.3'
-    implementation 'org.mockito:mockito-all:1.10.19'
-    implementation 'org.slf4j:slf4j-api:1.7.36'
-    implementation 'ch.qos.logback:logback-classic:1.2.11'
-    implementation 'com.google.api-client:google-api-client:1.35.1'
-    testImplementation 'org.jacoco:org.jacoco.build:0.8.8'
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+subprojects {
+    apply plugin: "java"
+    apply plugin: "jacoco"
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        implementation 'io.netty:netty-all:4.1.77.Final'
+        implementation 'com.fasterxml.jackson.core:jackson-core:2.13.3'
+        implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.3'
+        implementation 'org.mockito:mockito-all:1.10.19'
+        implementation 'org.slf4j:slf4j-api:1.7.36'
+        implementation 'ch.qos.logback:logback-classic:1.2.11'
+        implementation 'com.google.api-client:google-api-client:1.35.1'
+        implementation 'junit:junit:4.13.2'
+        testImplementation 'org.jacoco:org.jacoco.build:0.8.8'
+        testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
+        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+    }
+    test {
+        useJUnitPlatform()
+        testLogging.showStandardStreams = true
+    }
 }
 
-test {
-    useJUnitPlatform()
-    finalizedBy jacocoTestReport
-    testLogging.showStandardStreams = true
+project(":docker4j-core") {
+    jar.enabled = true
+    dependencies {
+    }
+}
+
+project(":docker4j-spring") {
+    dependencies {
+        implementation project(":docker4j-core")
+        implementation 'org.springframework:spring-core:5.3.20'
+        implementation 'org.springframework:spring-context:5.3.20'
+    }
+}
+
+dependencies {
+    implementation project(":docker4j-core")
 }
