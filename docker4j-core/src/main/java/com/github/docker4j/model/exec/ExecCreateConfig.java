@@ -1,4 +1,4 @@
-package docker4j.model.exec;
+package com.github.docker4j.model.exec;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;

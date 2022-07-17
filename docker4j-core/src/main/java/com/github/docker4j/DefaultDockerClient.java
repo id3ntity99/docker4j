@@ -1,7 +1,7 @@
-package docker4j;
+package com.github.docker4j;
 
-import docker4j.exceptions.DuplicationException;
-import docker4j.json.DockerResponseNode;
+import com.github.docker4j.json.DockerResponseNode;
+import com.github.docker4j.exceptions.DuplicationException;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;

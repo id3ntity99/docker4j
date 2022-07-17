@@ -1,6 +1,6 @@
-package docker4j.model;
+package com.github.docker4j.model;
 
-import docker4j.json.DockerResponseNode;
+import com.github.docker4j.json.DockerResponseNode;
 
 /**
  * use {@link DockerResponseNode} instead.

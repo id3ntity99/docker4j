@@ -1,4 +1,4 @@
-package docker4j.internal.stream;
+package com.github.docker4j.internal.stream;
 
 public enum StreamType {
     STDIN("stdin"),

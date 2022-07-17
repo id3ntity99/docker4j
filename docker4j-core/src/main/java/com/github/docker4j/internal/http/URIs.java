@@ -1,4 +1,4 @@
-package docker4j.internal.http;
+package com.github.docker4j.internal.http;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

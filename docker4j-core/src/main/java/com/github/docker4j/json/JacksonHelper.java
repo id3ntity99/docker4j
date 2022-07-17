@@ -1,4 +1,4 @@
-package docker4j.json;
+package com.github.docker4j.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;

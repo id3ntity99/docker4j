@@ -1,12 +1,12 @@
-package docker4j.json;
+package com.github.docker4j.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import docker4j.CreateContainerHandler;
-import docker4j.DockerClient;
-import docker4j.DockerHandler;
+import com.github.docker4j.CreateContainerHandler;
+import com.github.docker4j.DockerClient;
+import com.github.docker4j.DockerHandler;
 
 /**
  * This class contains multiple responses that the {@link DockerHandler}s received.

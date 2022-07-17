@@ -1,4 +1,4 @@
-package docker4j;
+package com.github.docker4j;
 
 public interface DockerRequestBuilder {
     DockerHandler build();

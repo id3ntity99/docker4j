@@ -1,6 +1,6 @@
-package docker4j;
+package com.github.docker4j;
 
-import docker4j.internal.stream.StreamType;
+import com.github.docker4j.internal.stream.StreamType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;

@@ -1,4 +1,4 @@
-package docker4j;
+package com.github.docker4j;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;

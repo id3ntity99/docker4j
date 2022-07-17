@@ -1,4 +1,4 @@
-package docker4j.internal.http;
+package com.github.docker4j.internal.http;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;

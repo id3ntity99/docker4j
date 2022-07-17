@@ -1,12 +1,12 @@
-package docker4j;
+package com.github.docker4j;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import docker4j.exceptions.DockerResponseException;
-import docker4j.internal.http.EndpointUtil;
-import docker4j.internal.http.RequestHelper;
-import docker4j.json.DockerResponseNode;
-import docker4j.json.JacksonHelper;
+import com.github.docker4j.internal.http.EndpointUtil;
+import com.github.docker4j.json.DockerResponseNode;
+import com.github.docker4j.exceptions.DockerResponseException;
+import com.github.docker4j.internal.http.RequestHelper;
+import com.github.docker4j.json.JacksonHelper;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;

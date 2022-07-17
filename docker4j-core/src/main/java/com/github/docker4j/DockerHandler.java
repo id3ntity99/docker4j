@@ -1,8 +1,8 @@
-package docker4j;
+package com.github.docker4j;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import docker4j.exceptions.DockerRequestException;
-import docker4j.json.DockerResponseNode;
+import com.github.docker4j.exceptions.DockerRequestException;
+import com.github.docker4j.json.DockerResponseNode;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;

@@ -1,4 +1,4 @@
-package docker4j.model;
+package com.github.docker4j.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;

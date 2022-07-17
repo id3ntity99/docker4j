@@ -1,8 +1,8 @@
-package docker4j;
+package com.github.docker4j;
 
-import docker4j.exceptions.DuplicationException;
+import com.github.docker4j.json.DockerResponseNode;
+import com.github.docker4j.exceptions.DuplicationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import docker4j.json.DockerResponseNode;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
