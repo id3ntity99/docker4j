@@ -11,6 +11,12 @@ public class RequestHelper {
 
     }
 
+    public static FullHttpRequest get(URI uri) {
+        FullHttpRequest req= new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri.getRawPath());
+        req.headers().set(HttpHeaderNames.HOST, uri.getHost());
+        return req;
+    }
+
     public static FullHttpRequest post(URI uri, boolean withEncoding,
                                        ByteBuf body, AsciiString contentType) {
         FullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, uri.getRawPath());
