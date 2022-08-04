@@ -49,7 +49,7 @@ public class DockerFrameDecoder extends SimpleChannelInboundHandler<ByteBuf> {
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    public void channelInactive(ChannelHandlerContext ctx) {
         LOGGER.debug("DockerClient's channel is now inactive {}", ctx.channel());
     }
 
