@@ -1,12 +1,12 @@
 package com.github.docker4j;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.github.docker4j.internal.http.EndpointUtil;
-import com.github.docker4j.json.DockerResponseNode;
-import com.github.docker4j.json.JacksonHelper;
 import com.github.docker4j.exceptions.DockerRequestException;
 import com.github.docker4j.exceptions.DockerResponseException;
+import com.github.docker4j.internal.http.EndpointUtil;
 import com.github.docker4j.internal.http.RequestHelper;
+import com.github.docker4j.json.DockerResponseNode;
+import com.github.docker4j.json.JacksonHelper;
 import com.github.docker4j.model.exec.ExecStartConfig;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -29,12 +29,15 @@ public class ExecStartHandler extends DockerHandler {
     @Override
     public FullHttpRequest render() throws DockerRequestException {
         try {
-            String execId = node.getInternal(DockerResponseNode.EXEC_ID);
+            //String execId = node.getInternal(DockerResponseNode.EXEC_ID);
+            DockerResponse lastResponse = node.last();
+            String execId = lastResponse.getExecIds()[0];
             URI uri = EndpointUtil.execStart(execId);
             byte[] body = JacksonHelper.writeValueAsString(config).getBytes(CharsetUtil.UTF_8);
             ByteBuf bodyBuffer = allocator.heapBuffer().writeBytes(body);
             FullHttpRequest req = RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
             req.headers().set(HttpHeaderNames.UPGRADE, "tcp");
+            logger.info("Rendered FullHttpRequest. URL == {}", uri);
             return req;
         } catch (JsonProcessingException e) {
             String errMsg = String.format("Exception raised while build the %s command", this.getClass().getSimpleName());
@@ -43,26 +46,32 @@ public class ExecStartHandler extends DockerHandler {
     }
 
     @Override
-    protected void parseResponseBody(String json) throws JsonProcessingException {
-        node.setResponse(JacksonHelper.toNode(json));
+    protected DockerResponse parseResponseBody(String json) throws JsonProcessingException {
+        /*This method returns null since the response body is empty*/
+        return null;
     }
 
-    //FIXME 다른 Handler들처럼 리팩터링.
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        this.node = (DockerResponseNode) evt;
+        FullHttpRequest req = render();
+        ctx.channel().writeAndFlush(req);
+    }
+
     @Override
     public void channelRead0(ChannelHandlerContext ctx, FullHttpResponse res) throws Exception {
         if (res.status().code() == 101) {
-            String json = res.content().toString(CharsetUtil.UTF_8);
-            parseResponseBody(json);
-            //ctx.pipeline().remove(HttpClientCodec.class);
-            //ctx.pipeline().remove(HttpObjectAggregator.class);
-            //ctx.pipeline().remove(this);
-            ctx.pipeline().addLast(new DockerFrameDecoder(input));
+            promise.setSuccess(node);
+            ctx.channel().pipeline().remove(HttpClientCodec.class);
+            ctx.channel().pipeline().remove(HttpObjectAggregator.class);
+            ctx.channel().pipeline().remove(this);
+            ctx.channel().pipeline().addLast(new DockerFrameDecoder(input));
+            logger.debug("Remaining DockerClient's handlers: {}", ctx.pipeline().toMap());
             ctx.fireChannelActive();
         } else {
             String errMessage = String.format("Unsuccessful response detected: %s %s",
                     res.status().toString(),
                     res.content().toString(CharsetUtil.UTF_8));
-            node.setInternal(DockerResponseNode.ERROR, errMessage);
             throw new DockerResponseException(errMessage);
         }
     }

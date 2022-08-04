@@ -1,14 +1,13 @@
 package com.github.docker4j;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.github.docker4j.internal.http.EndpointUtil;
-import com.github.docker4j.json.DockerResponseNode;
-import com.github.docker4j.json.JacksonHelper;
 import com.github.docker4j.exceptions.DockerRequestException;
 import com.github.docker4j.exceptions.DockerResponseException;
+import com.github.docker4j.internal.http.EndpointUtil;
 import com.github.docker4j.internal.http.RequestHelper;
+import com.github.docker4j.json.DockerResponseNode;
+import com.github.docker4j.json.JacksonHelper;
 import com.github.docker4j.model.*;
-import docker4j.model.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -42,23 +41,26 @@ public class CreateContainerHandler extends DockerHandler {
     }
 
     @Override
-    protected void parseResponseBody(String json) throws JsonProcessingException {
-        String containerId = JacksonHelper.getValue("Id", json);
-        node.setResponse(JacksonHelper.toNode(json));
-        node.setInternal(DockerResponseNode.CONTAINER_ID, containerId);
+    protected DockerResponse parseResponseBody(String json) throws JsonProcessingException {
+        return mapper.readValue(json, CreateContainerResponse.class);
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        this.node = (DockerResponseNode) evt;
+        ctx.channel().writeAndFlush(render());
     }
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, FullHttpResponse res) throws Exception {
         if (res.status().code() == 201) {
             String json = res.content().toString(CharsetUtil.UTF_8);
-            parseResponseBody(json);
-            handleResponse(ctx);
+            DockerResponse createResponse = parseResponseBody(json);
+            checkLast(ctx, createResponse);
         } else {
             String errMessage = String.format("Unsuccessful response detected: %s %s",
                     res.status().toString(),
                     res.content().toString(CharsetUtil.UTF_8));
-            node.setInternal(DockerResponseNode.ERROR, errMessage);
             throw new DockerResponseException(errMessage);
         }
     }

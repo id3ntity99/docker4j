@@ -1,6 +1,7 @@
 package com.github.docker4j;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.docker4j.exceptions.DockerRequestException;
 import com.github.docker4j.json.DockerResponseNode;
 import io.netty.buffer.ByteBufAllocator;
@@ -13,9 +14,12 @@ import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.netty.channel.ChannelHandler.Sharable;
+
+@Sharable
 public abstract class DockerHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
-    protected DockerHandler nextRequest = null;
+    protected final ObjectMapper mapper = new ObjectMapper();
     protected ByteBufAllocator allocator = new PooledByteBufAllocator();
     protected Promise<DockerResponseNode> promise = null;
     protected DockerResponseNode node = null;
@@ -28,41 +32,27 @@ public abstract class DockerHandler extends SimpleChannelInboundHandler<FullHttp
         return this;
     }
 
-    protected DockerHandler setNext(DockerHandler nextRequest) {
-        this.nextRequest = nextRequest;
-        return this;
-    }
-
     protected DockerHandler setAllocator(ByteBufAllocator allocator) {
         this.allocator = allocator;
         return this;
     }
 
-    protected DockerHandler setNode(DockerResponseNode node) {
-        this.node = node;
-        return this;
-    }
+    protected abstract DockerResponse parseResponseBody(String responseBody) throws JsonProcessingException;
 
-    private void propagate() {
-        nextRequest.setPromise(promise)
-                .setAllocator(allocator)
-                .setNode(node);
-    }
-
-    protected void handleResponse(ChannelHandlerContext ctx) {
-        if (nextRequest != null) {
-            logger.debug("Next request detected: {}", nextRequest.getClass().getSimpleName());
-            propagate();
-            FullHttpRequest req = nextRequest.render();
-            ctx.channel().writeAndFlush(req).addListener(new NextRequestListener(ctx, this, nextRequest));
-        } else {
-            logger.info("There are no more requests... removing {}", this.getClass().getSimpleName());
+    protected void checkLast(ChannelHandlerContext ctx, DockerResponse response) {
+        node.add(response);
+        if (ctx.name().equals("last"))
             promise.setSuccess(node);
-            ctx.pipeline().remove(this);
-        }
+        ctx.pipeline().remove(this);
+        ctx.pipeline().fireUserEventTriggered(node);
     }
 
-    protected abstract void parseResponseBody(String responseBody) throws JsonProcessingException;
+    protected void checkLast(ChannelHandlerContext ctx) {
+        if (ctx.name().equals("last"))
+            promise.setSuccess(node);
+        ctx.pipeline().remove(this);
+        ctx.pipeline().fireUserEventTriggered(node);
+    }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable t) {

@@ -1,11 +1,11 @@
 package com.github.docker4j;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.github.docker4j.internal.http.EndpointUtil;
-import com.github.docker4j.json.DockerResponseNode;
 import com.github.docker4j.exceptions.DockerRequestException;
 import com.github.docker4j.exceptions.DockerResponseException;
+import com.github.docker4j.internal.http.EndpointUtil;
 import com.github.docker4j.internal.http.RequestHelper;
+import com.github.docker4j.json.DockerResponseNode;
 import com.github.docker4j.json.JacksonHelper;
 import com.github.docker4j.model.exec.ExecCreateConfig;
 import io.netty.buffer.ByteBuf;
@@ -19,21 +19,31 @@ import java.net.URI;
 
 public class ExecCreateHandler extends DockerHandler {
     private final ExecCreateConfig config;
+    private final String containerId;
 
-    public ExecCreateHandler(Builder builder) {
+    private ExecCreateHandler(Builder builder) {
         super(builder);
         this.config = builder.config;
+        this.containerId = builder.containerId;
     }
 
     @Override
     public FullHttpRequest render() {
         try {
             byte[] body = JacksonHelper.writeValueAsString(config).getBytes(CharsetUtil.UTF_8);
-            String containerId = node.getInternal(DockerResponseNode.CONTAINER_ID);
-            URI uri = EndpointUtil.execCreate(containerId);
-            ByteBuf bodyBuffer = allocator.heapBuffer().writeBytes(body);
-            logger.debug("Rendered FullHttpRequest. URL == {}", uri);
-            return RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
+            if (this.containerId == null) {
+                DockerResponse lastRes = node.last();
+                String id = lastRes.getContainerId();
+                URI uri = EndpointUtil.execCreate(id);
+                ByteBuf bodyBuffer = allocator.heapBuffer().writeBytes(body);
+                logger.info("Rendered FullHttpRequest. URL == {}", uri);
+                return RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
+            } else {
+                URI uri = EndpointUtil.execCreate(containerId);
+                ByteBuf bodyBuffer = allocator.heapBuffer().writeBytes(body);
+                logger.info("Rendered FullHttpRequest. URL == {}", uri);
+                return RequestHelper.post(uri, true, bodyBuffer, HttpHeaderValues.APPLICATION_JSON);
+            }
         } catch (JsonProcessingException e) {
             String errMsg = String.format("Exception raised while build the %s command", this.getClass().getSimpleName());
             throw new DockerRequestException(errMsg, e);
@@ -41,10 +51,20 @@ public class ExecCreateHandler extends DockerHandler {
     }
 
     @Override
-    protected void parseResponseBody(String json) throws JsonProcessingException {
-        String execId = JacksonHelper.getValue("Id", json);
-        node.setResponse(JacksonHelper.toNode(json));
-        node.setInternal(DockerResponseNode.EXEC_ID, execId);
+    protected DockerResponse parseResponseBody(String json) throws JsonProcessingException {
+        DockerResponse execCreateRes = mapper.readValue(json, ExecCreateResponse.class);
+        node.add(execCreateRes);
+        return execCreateRes;
+        //String execId = JacksonHelper.getValue("Id", json);
+        //node.setResponse(JacksonHelper.toNode(json));
+        //node.setInternal(DockerResponseNode.EXEC_ID, execId);
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+        this.node = (DockerResponseNode) evt;
+        FullHttpRequest req = render();
+        ctx.channel().writeAndFlush(req);
     }
 
     @Override
@@ -52,12 +72,11 @@ public class ExecCreateHandler extends DockerHandler {
         if (res.status().code() == 201) {
             String json = res.content().toString(CharsetUtil.UTF_8);
             parseResponseBody(json);
-            handleResponse(ctx);
+            checkLast(ctx);
         } else {
             String errMessage = String.format("Unsuccessful response detected: %s %s",
                     res.status().toString(),
                     res.content().toString(CharsetUtil.UTF_8));
-            node.setInternal(DockerResponseNode.ERROR, errMessage);
             throw new DockerResponseException(errMessage);
         }
     }
@@ -65,6 +84,12 @@ public class ExecCreateHandler extends DockerHandler {
 
     public static class Builder implements DockerRequestBuilder {
         private final ExecCreateConfig config = new ExecCreateConfig();
+        private String containerId;
+
+        public Builder withContainerId(String containerId) {
+            this.containerId = containerId;
+            return this;
+        }
 
         public Builder withAttachStdin(boolean attachStdin) {
             config.setAttachStdin(attachStdin);
