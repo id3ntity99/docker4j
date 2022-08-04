@@ -1,8 +1,6 @@
 package com.github.docker4j;
 
 import com.github.docker4j.json.DockerResponseNode;
-import com.github.docker4j.exceptions.DuplicationException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -22,7 +20,7 @@ public interface DockerClient extends Closeable {
 
     ChannelFuture connect();
 
-    Promise<DockerResponseNode> request() throws DuplicationException, JsonProcessingException;
+    Promise<DockerResponseNode> request();
 
     /**
      * Write a series of bytes into the interactive channel, which was established via {@link ExecStartHandler};

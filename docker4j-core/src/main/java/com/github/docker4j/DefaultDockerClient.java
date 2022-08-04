@@ -1,16 +1,12 @@
 package com.github.docker4j;
 
 import com.github.docker4j.json.DockerResponseNode;
-import com.github.docker4j.exceptions.DuplicationException;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
-import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.util.concurrent.Promise;
@@ -25,56 +21,24 @@ import java.util.List;
 
 public class DefaultDockerClient implements DockerClient {
     private static final Logger logger = LoggerFactory.getLogger(DefaultDockerClient.class);
-    private EventLoopGroup eventLoopGroup;
+    private EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
     private InetSocketAddress dockerAddress;
     private Channel outboundChannel;
     private Class<? extends Channel> outChannelClass;
-    private DockerResponseNode node = new DockerResponseNode();
     private final List<DockerHandler> handlers = new ArrayList<>();
 
-    private void checkDuplicates() throws DuplicationException {
-        DockerHandler requestToCheck;
-        int hashToCheck;
+    private void link(ByteBufAllocator allocator, Promise<DockerResponseNode> promise) {
+        DockerHandler current;
         for (int i = 0; i < handlers.size(); i++) {
-            requestToCheck = handlers.get(i);
-            hashToCheck = requestToCheck.hashCode();
-            for (int j = 0; j < handlers.size(); j++) {
-                if (j == i) {
-                    continue;
-                }
-                if (hashToCheck == handlers.get(j).hashCode()) {
-                    String err = String.format("Duplication detected: %s %s", requestToCheck.getClass(), handlers.get(j));
-                    String message = "You need to create new instance of DockerRequest, even for the same operation." +
-                            "Do not reuse the instances!";
-                    throw new DuplicationException(err + message);
-                }
-            }
+            current = handlers.get(i);
+            current.setPromise(promise);
+            current.setAllocator(allocator);
+            if (i == handlers.size() - 1)
+                outboundChannel.pipeline().addLast("last", current);
+            else
+                outboundChannel.pipeline().addLast(current);
         }
-        logger.debug("There are no duplications");
     }
-
-    private void link(ByteBufAllocator allocator, Promise<DockerResponseNode> promise) throws DuplicationException {
-        checkDuplicates();
-        final int lastIndex = handlers.size() - 1;
-        DockerHandler nextRequest;
-        DockerHandler currentRequest;
-        for (int i = 0; i <= handlers.size() - 1; i++) {
-            currentRequest = handlers.get(i);
-            if (i == 0) {
-                currentRequest.setAllocator(allocator)
-                        .setNode(node)
-                        .setPromise(promise);
-            }
-            if (i != lastIndex) {
-                nextRequest = handlers.get(i + 1);
-                currentRequest.setNext(nextRequest);
-                logger.debug("Linked: ({}, {}) =====> ({}, {})", currentRequest, currentRequest.hashCode(), nextRequest, nextRequest.hashCode());
-            }
-            handlers.set(i, currentRequest);
-        }
-        logger.debug("Completed request linking {}", handlers);
-    }
-
 
     @Override
     public DefaultDockerClient add(DockerHandler handler) {
@@ -102,6 +66,7 @@ public class DefaultDockerClient implements DockerClient {
 
     @Override
     public ChannelFuture connect() {
+        logger.info("Connecting to Dockerd");
         ChannelFuture future = new Bootstrap().channel(outChannelClass)
                 .group(eventLoopGroup)
                 .handler(new DockerClientInit())
@@ -111,13 +76,12 @@ public class DefaultDockerClient implements DockerClient {
     }
 
     @Override
-    public Promise<DockerResponseNode> request() throws DuplicationException {
+    public Promise<DockerResponseNode> request() {
+        DockerResponseNode node = new DockerResponseNode();
+        logger.debug("Requesting {}", handlers);
         Promise<DockerResponseNode> resultPromise = outboundChannel.eventLoop().newPromise();
         link(outboundChannel.alloc(), resultPromise);
-        DockerHandler firstHandler = handlers.get(0);
-        outboundChannel.pipeline().addLast(firstHandler);
-        FullHttpRequest request = firstHandler.render();
-        outboundChannel.writeAndFlush(request);
+        outboundChannel.pipeline().fireUserEventTriggered(node);
         handlers.clear();
         logger.debug("Auto cleared {}", handlers);
         return resultPromise;
@@ -125,7 +89,7 @@ public class DefaultDockerClient implements DockerClient {
 
     @Override
     public ChannelFuture write(ByteBuf in) {
-        return outboundChannel.writeAndFlush(in);
+        return outboundChannel.writeAndFlush(in).addListener(new WriteListener());
     }
 
     @Override
@@ -136,7 +100,8 @@ public class DefaultDockerClient implements DockerClient {
     @Override
     public void close() {
         handlers.clear();
-        eventLoopGroup.shutdownGracefully();
+        outboundChannel.disconnect();
+        outboundChannel.pipeline().close();
         outboundChannel.close();
     }
 
@@ -146,6 +111,15 @@ public class DefaultDockerClient implements DockerClient {
             ch.config().setAllocator(new PooledByteBufAllocator(true));
             ch.pipeline().addLast(new HttpClientCodec());
             ch.pipeline().addLast(new HttpObjectAggregator(8092));
+        }
+    }
+
+    private static class WriteListener implements ChannelFutureListener {
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+            if (!future.isSuccess()) {
+                logger.error("DockerClient#write(ByteBuf in) raised an exception while writing into outbound channel", future.cause());
+            }
         }
     }
 }
