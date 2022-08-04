@@ -15,6 +15,7 @@ public class EndpointUtil {
     private static final String STOP_CONTAINER = "http://localhost:2375/containers/%s/stop?t=%d";
     private static final String KILL_CONTAINER = "http://localhost:2375/containers/%s/kill";
     private static final String REMOVE_CONTAINER = "http://localhost:2375/containers/%s?v=%b&froce=%b&link=%b";
+    private static final String INSPECT_CONTAINER = "http://localhost:2375/containers/%s/json?size=%b";
 
     private EndpointUtil() {
 
@@ -63,6 +64,11 @@ public class EndpointUtil {
 
     public static URI execStart(String execId) {
         String stringUri = String.format(EXEC_START, execId);
+        return generateURI(stringUri);
+    }
+
+    public static URI inspectContainer(String containerId, boolean size) {
+        String stringUri = String.format(INSPECT_CONTAINER, containerId, size);
         return generateURI(stringUri);
     }
 }
