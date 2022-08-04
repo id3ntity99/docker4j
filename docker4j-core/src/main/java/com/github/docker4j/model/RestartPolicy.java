@@ -8,10 +8,10 @@ public class RestartPolicy {
     @JsonProperty("MaximumRetryCount")
     private int maxRetryCount;
 
-    public RestartPolicy(String name, int maxRetryCount) {
-        this.name = name;
-        this.maxRetryCount = maxRetryCount;
-    }
+    //public RestartPolicy(String name, int maxRetryCount) {
+    //    this.name = name;
+    //    this.maxRetryCount = maxRetryCount;
+    //}
 
     public String getName() {
         return name;

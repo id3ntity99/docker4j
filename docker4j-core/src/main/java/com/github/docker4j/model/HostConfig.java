@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
  * Used for creation of container and container inspection.
  * This object will be converted to json object and sent to docker daemon.
  * Check /var/lib/docker/{container_id}/hostconfig.json
+ *
  * @see <a href="https://docs.docker.com/engine/api/v1.41/#operation/ContainerCreate">HostConfig</a>
  */
 public class HostConfig {
@@ -49,6 +49,8 @@ public class HostConfig {
     private String[] deviceCGroupRules;
     @JsonProperty("DeviceRequests")
     private List<DeviceRequest> deviceRequests;
+    @JsonProperty("KernelMemory")
+    private long kernelMemory;
     @JsonProperty("KernelMemoryTCP")
     private long kernelMemoryTCP;
     @JsonProperty("MemoryReservation")
@@ -61,6 +63,8 @@ public class HostConfig {
     private long nanoCpus;
     @JsonProperty("OomKillDisable")
     private boolean oomKillDisable;
+    @JsonProperty("PidsLimit")
+    private long pidsLimit;
     @JsonProperty("Ulimits")
     private List<ULimit> uLimits;
     @JsonProperty("CpuCount")
@@ -119,6 +123,8 @@ public class HostConfig {
     private String pidMode;
     @JsonProperty("Privileged")
     private boolean privileged = false;
+    @JsonProperty("PublishAllPorts")
+    private boolean publishAllPorts;
     @JsonProperty("ReadonlyRootfs")
     private boolean readOnlyRootFs = false;
     @JsonProperty("SecurityOpt")
@@ -308,6 +314,14 @@ public class HostConfig {
         return this;
     }
 
+    public long getKernelMemory() {
+        return kernelMemory;
+    }
+
+    public void setKernelMemory(long kernelMemory) {
+        this.kernelMemory = kernelMemory;
+    }
+
     public long getKernelMemoryTCP() {
         return kernelMemoryTCP;
     }
@@ -360,6 +374,14 @@ public class HostConfig {
     public HostConfig setOomKillDisable(boolean oomKillDisable) {
         this.oomKillDisable = oomKillDisable;
         return this;
+    }
+
+    public long getPidsLimit() {
+        return pidsLimit;
+    }
+
+    public void setPidsLimit(long pidsLimit) {
+        this.pidsLimit = pidsLimit;
     }
 
     public List<ULimit> getULimits() {
@@ -623,6 +645,14 @@ public class HostConfig {
         return this;
     }
 
+    public boolean isPublishAllPorts() {
+        return publishAllPorts;
+    }
+
+    public void setPublishAllPorts(boolean publishAllPorts) {
+        this.publishAllPorts = publishAllPorts;
+    }
+
     public boolean isReadOnlyRootFs() {
         return readOnlyRootFs;
     }
@@ -740,10 +770,10 @@ public class HostConfig {
         return this;
     }
 
-    public HostConfig setPortBindings(PortBinding portBinding) {
-        this.portBindings = portBinding.getPortMap();
-        return this;
-    }
+    //public HostConfig setPortBindings(PortBinding portBinding) {
+    //    this.portBindings = portBinding.getPortMap();
+    //    return this;
+    //}
 
     //TODO static class 분리
 
