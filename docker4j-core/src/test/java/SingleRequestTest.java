@@ -15,7 +15,7 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class SyncRequestTest {
+class SingleRequestTest {
     private static DockerClient client;
     private static DockerResponseNode globalNode;
     private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
@@ -96,7 +96,7 @@ class SyncRequestTest {
     @Test
     @Order(6)
     void startContainer_unsuccessful() throws Exception {
-        globalNode.setInternal("_container_id", "gibberishContainerId");
+        // globalNode.setInternal("_container_id", "gibberishContainerId");
         DockerHandler startHandler = new StartContainerHandler.Builder().build();
         Promise<DockerResponseNode> promise = client.add(startHandler).request();
         assertThrows(DockerResponseException.class, promise::sync);
@@ -119,68 +119,5 @@ class SyncRequestTest {
         Promise<DockerResponseNode> promise = client.add(removeHandler).request();
         assertThrows(DockerResponseException.class, promise::sync);
         assertEquals(1, globalNode.size());
-    }
-
-    @Test
-    @Order(9)
-    void chainRequest_successful() throws Exception {
-        client = new DefaultDockerClient().withAddress("localhost", 2375)
-                .withEventLoopGroup(eventLoopGroup)
-                .withOutChannelClass(NioSocketChannel.class);
-        client.connect().sync().addListener((ChannelFutureListener) future -> assertTrue(future.isSuccess()));
-        DockerHandler createHandler = new CreateContainerHandler.Builder()
-                .withImage("alpine")
-                .withStopTimeout(1)
-                .withTty(true)
-                .build();
-        DockerHandler startHandler = new StartContainerHandler.Builder().build();
-        DockerHandler stopHandler = new StopContainerHandler.Builder()
-                .withWaitTime(1)
-                .build();
-        DockerHandler removeHandler = new RemoveContainerHandler.Builder().build();
-        Promise<DockerResponseNode> promise = client.add(createHandler)
-                .add(startHandler)
-                .add(stopHandler)
-                .add(removeHandler)
-                .request();
-        DockerResponseNode node = promise.get();
-        assertDoesNotThrow(promise::sync);
-        assertEquals(1, node.size());
-        for (int i = 0 ; i < node.size(); i++) {
-            DockerResponse current = node.get(i);
-            String responseString = mapper.writeValueAsString(current);
-            System.out.println(responseString);
-            System.out.println(current.toString());
-        }
-    }
-
-    @Test
-    @Order(10)
-    void chainRequest_sameInstances_successful() throws Exception {
-        globalNode.clear();
-        DockerHandler createHandler = new CreateContainerHandler.Builder().withImage("alpine").build();
-        DockerHandler removeHandler = new RemoveContainerHandler.Builder().build();
-        Promise<DockerResponseNode> promise = client.add(createHandler)
-                .add(removeHandler)
-                .add(createHandler)
-                .add(removeHandler)
-                .request();
-        assertDoesNotThrow(promise::sync);
-        assertEquals(2, globalNode.size());
-    }
-
-    @Test
-    @Order(11)
-    void createContainer_fullConfig_successful() throws Exception {
-        // TODO to perform this test, we need to implement InspectContainerHandler
-        //  to check whether the configuration works and applied properly.
-        globalNode.clear();
-        DockerHandler inspectHandler = new InspectContainerHandler.Builder().withSize(false).build();
-        DockerHandler removeHandler = new RemoveContainerHandler.Builder().build();
-        DockerHandler createContainer = new CreateContainerHandler.Builder()
-                .withImage("alpine")
-                .build();
-        client.add(createContainer).add(inspectHandler).add(removeHandler).request().get();
-        assertEquals(3, globalNode.size());
     }
 }
